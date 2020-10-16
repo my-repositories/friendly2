@@ -7,7 +7,16 @@
   "main": "build/app.js",
   "scripts": {
     "build:dev": "webpack --config webpack/local.config.js",
-    "build:prod": "webpack --config webpack/prod.config.js"
+    "build:prod": "webpack --config webpack/prod.config.js",
+    "test": "jest"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.ts?$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "~/(.*)": "<rootDir>/src/$1"
+    }
   },
   "husky": {
     "hooks": {
@@ -29,9 +38,12 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "4.4.1",
     "@typescript-eslint/parser": "4.4.1",
+    "@types/jest": "26.0.14",
     "eslint": "7.11.0",
     "eslint-config-google": "0.14.0",
     "husky": "4.3.0",
-    "lint-staged": "10.4.0"
+    "jest": "26.5.3",
+    "lint-staged": "10.4.0",
+    "ts-jest": "^26.4.1"
   }
 }
