@@ -9,6 +9,12 @@
     "paths": {
       "~/*": ["./*"]
     },
-    "esModuleInterop": true
+    "types": [
+      "reflect-metadata",
+      "ts-jest"
+    ],
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   }
 }
