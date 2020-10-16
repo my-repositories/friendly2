@@ -9,6 +9,16 @@
     "build:dev": "webpack --config webpack/local.config.js",
     "build:prod": "webpack --config webpack/prod.config.js"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix"
+    ]
+  },
   "dependencies": {
     "clean-webpack-plugin": "3.0.0",
     "ts-loader": "8.0.5",
@@ -20,6 +30,8 @@
     "@typescript-eslint/eslint-plugin": "4.4.1",
     "@typescript-eslint/parser": "4.4.1",
     "eslint": "7.11.0",
-    "eslint-config-google": "0.14.0"
+    "eslint-config-google": "0.14.0",
+    "husky": "4.3.0",
+    "lint-staged": "10.4.0"
   }
 }
