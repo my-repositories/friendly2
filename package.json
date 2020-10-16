@@ -1,0 +1,21 @@
+{
+  "name": "friendly2",
+  "author": "Aleksandr Loktionov <loktionov129@gmail.com>",
+  "license": "MIT",
+  "version": "1.0.0",
+  "description": "[Chrome extension] Automation of clicks for sending requests to friends and/or subscribers",
+  "main": "build/app.js",
+  "scripts": {
+    "build:dev": "webpack --config webpack/local.config.js",
+    "build:prod": "webpack --config webpack/prod.config.js"
+  },
+  "dependencies": {
+    "clean-webpack-plugin": "3.0.0",
+    "ts-loader": "8.0.5",
+    "typescript": "4.0.3",
+    "webpack": "5.0.0",
+    "webpack-cli": "4.0.0"
+  },
+  "devDependencies": {
+  }
+}
