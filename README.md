@@ -5,7 +5,8 @@ Google Chrome extension which automates sending requests to friends/subscribers.
 1. Download the latest [release](https://github.com/my-repositories/friendly2/releases)
 2. Unzip the downloaded file
 3. Navigate to Browser Settings -> More Tools -> Extensions
-4. Click Load unpacked and pick the directory with the extension
+4. Enable the Developer mode
+5. Click Load unpacked and pick the directory with the extension
 
 
 ### How It Works
