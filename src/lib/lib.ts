@@ -20,7 +20,7 @@ export class Lib {
             throw new Error(`Handler not found. Current url: ${url}.`);
         }
 
-        this._logger.warn(handler, 'Handler found!');
+        this._logger.warn(handler, `Handler found for ${url}!`);
 
         return handler;
     }

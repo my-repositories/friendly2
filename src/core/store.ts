@@ -10,10 +10,14 @@ export class Store {
     }
 
     save(newLinks: string[]): void {
+        if (!newLinks || !newLinks.length) {
+            return;
+        }
+
         const storageLinks = this.get();
         const mergedLinks = new Set([
             ...newLinks,
-            storageLinks,
+            ...storageLinks,
         ]);
         const data = Array.from(mergedLinks).slice(0, Store._maxLinksCount);
 
