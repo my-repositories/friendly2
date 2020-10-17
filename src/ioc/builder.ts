@@ -1,14 +1,14 @@
 import { BuilderParams } from './interfaces/builder-params';
 
 export class Builder {
-    constructor(private params: BuilderParams) {
+    constructor(private _params: BuilderParams) {
     }
 
     as(type: any) {
-        this.params.add(type, this.params.implementation);
+        this._params.add(type, this._params.implementation);
     }
 
     asSelf() {
-        this.params.add(this.params.implementation, this.params.implementation);
+        this._params.add(this._params.implementation, this._params.implementation);
     }
 }

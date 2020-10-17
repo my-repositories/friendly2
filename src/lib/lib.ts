@@ -1,5 +1,6 @@
 import { Handler } from '~/core/handler';
 import { IoC } from '~/ioc/container';
+import { Logger } from '~/core/logger';
 import { inject } from '~/ioc/decorators/inject';
 import { injectable } from '~/ioc/decorators/injectable';
 
@@ -8,6 +9,7 @@ export class Lib {
     constructor(
         @inject(IoC.instance.resolveAll(Handler))
         private _handlers: Handler[],
+        private _logger: Logger,
     ) {
     }
 
@@ -18,7 +20,7 @@ export class Lib {
             throw new Error(`Handler not found. Current url: ${url}.`);
         }
 
-        console.info(handler, 'Handler found!');
+        this._logger.warn(handler, 'Handler found!');
 
         return handler;
     }

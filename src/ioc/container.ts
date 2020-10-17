@@ -7,14 +7,14 @@ export class IoC {
         return IoC._instance;
     }
 
-    private deps = new Map<any, Set<any>>();
+    private _deps = new Map<any, Set<any>>();
 
     add(type: any, implementation: any) {
-        const set = this.deps.get(type) || new Set();
+        const set = this._deps.get(type) || new Set();
 
         set.add(implementation);
 
-        this.deps.set(type, set);
+        this._deps.set(type, set);
     }
 
     register(implementation: any): Builder {
@@ -25,19 +25,19 @@ export class IoC {
     }
 
     resolve<T>(key: (new (...args: any[]) => T)): T {
-        const dependency = this.deps.get(key).values().next().value;
+        const dependency = this._deps.get(key).values().next().value;
 
-        return this.createInstance(dependency);
+        return this._createInstance(dependency);
     }
 
     resolveAll<T>(key: (new (...args: any[]) => T)): T[] {
-        const dependencies = this.deps.get(key);
+        const dependencies = this._deps.get(key);
 
         return Array.from(dependencies)
-            .map((dependency: any) => this.createInstance(dependency));
+            .map((dependency: any) => this._createInstance(dependency));
     }
 
-    private createInstance<T>(Dependency: (new (...args: any[]) => T)): T {
+    private _createInstance<T>(Dependency: (new (...args: any[]) => T)): T {
         const argTypes = Reflect.getMetadata('design:paramtypes', Dependency);
         const args = (argTypes || []).map((type: any, index: number) => {
             const metadata = Reflect.getMetadata(index, Dependency);
