@@ -27,7 +27,7 @@ export class GithubHandler extends Handler {
     }
 
     getProfilesLinks(): string[] {
-        const linkNodes = <HTMLLinkElement[]>[
+        const linkNodes = <HTMLAnchorElement[]>[
             ...this._dom.findAllElements('.position-relative a[data-hovercard-type="user"]'),
         ];
         return linkNodes

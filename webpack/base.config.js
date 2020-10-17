@@ -6,6 +6,7 @@ module.exports = {
     context: path.resolve(__dirname, '../src'),
     resolve: {
         alias: {
+            '~/mocks': path.resolve(__dirname, '../__mocks__'),
             '~': path.resolve(__dirname, '../src'),
         },
         extensions: ['.ts'],

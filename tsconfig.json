@@ -5,9 +5,10 @@
     "module": "es6",
     "target": "es6",
     "allowJs": true,
-    "baseUrl": "./src",
+    "baseUrl": "./",
     "paths": {
-      "~/*": ["./*"]
+      "~/mocks/*": ["./__mocks__/*"],
+      "~/*": ["./src/*"]
     },
     "types": [
       "reflect-metadata",

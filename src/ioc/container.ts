@@ -33,7 +33,7 @@ export class IoC {
     resolveAll<T>(key: (new (...args: any[]) => T)): T[] {
         const dependencies = this._deps.get(key);
 
-        return Array.from(dependencies)
+        return Array.from(dependencies || [])
             .map((dependency: any) => this._createInstance(dependency));
     }
 
