@@ -18,7 +18,7 @@ jobs:
         run: |
           yarn install
           yarn build:prod
-          zip --junk-paths friendly2-${{ github.ref }}.zip build
+          zip --junk-paths friendly2-${{ github.ref }}.zip build/*
 
       - name: Create Release
         id: create_release
