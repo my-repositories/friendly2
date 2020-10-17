@@ -2,7 +2,7 @@
   "name": "friendly2",
   "author": "Aleksandr Loktionov <loktionov129@gmail.com>",
   "license": "MIT",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "description": "[Chrome extension] Automation of clicks for sending requests to friends and/or subscribers",
   "main": "build/app.js",
   "scripts": {
@@ -15,6 +15,7 @@
       "^.+\\.ts?$": "ts-jest"
     },
     "moduleNameMapper": {
+      "~/mocks/(.*)": "<rootDir>/__mocks__/$1",
       "~/(.*)": "<rootDir>/src/$1"
     }
   },
