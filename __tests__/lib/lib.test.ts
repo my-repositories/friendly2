@@ -5,7 +5,7 @@ import { Lib } from '~/lib/lib';
 import { Logger } from '~/core/logger';
 
 describe(`${Lib.name} - Класс с полезными методами:`, () => {
-    describe('метод findHandlerByUrl:', () => {
+    describe('Метод findHandlerByUrl:', () => {
         it('возвращает githubHandler', () => {
             const githubHandler = new GithubHandler(new Dom(), new Logger());
             const handlers = [
