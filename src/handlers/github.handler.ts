@@ -28,7 +28,7 @@ export class GithubHandler extends Handler {
 
     getProfilesLinks(): string[] {
         const linkNodes = <HTMLLinkElement[]>[
-            ...document.querySelectorAll('.position-relative a[data-hovercard-type="user"]'),
+            ...this._dom.findAllElements('.position-relative a[data-hovercard-type="user"]'),
         ];
         return linkNodes
             .filter((link) => link.classList.contains('no-underline'))
@@ -48,7 +48,7 @@ export class GithubHandler extends Handler {
 
     private _tryToClickFirstFollowButton(selector: string): boolean {
         const followButtons = <HTMLButtonElement[]>[
-            ...document.querySelectorAll(selector),
+            ...this._dom.findAllElements(selector),
         ]
             .filter((button) => !(button.parentNode as HTMLFormElement).hidden);
 

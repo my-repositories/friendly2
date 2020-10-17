@@ -25,10 +25,9 @@ export class Main {
     loadLinks(): void {
         const links = this._getLinks();
 
-        if (links.length) {
-            this._nextLink = links.pop();
-            this._store.save(links);
-        }
+        this._nextLink = links.pop();
+        this._store.save(links);
+        this._logger.warn('Save links:', links);
     }
 
     tryToFollowOnProfile(): void {
@@ -54,10 +53,15 @@ export class Main {
     }
 
     private _getLinks(): string[] {
-        const links = this._handler.getProfilesLinks();
+        const profilesLinks = this._handler.getProfilesLinks();
 
-        return links.length
-            ? links
-            : this._store.get();
+        if (profilesLinks.length) {
+            return profilesLinks;
+        }
+
+        const storedLinks = this._store.get();
+        this._store.reset();
+
+        return storedLinks;
     }
 }

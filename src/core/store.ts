@@ -23,4 +23,8 @@ export class Store {
 
         sessionStorage.setItem(Store._linksKey, JSON.stringify(data));
     }
+
+    reset(): void {
+        sessionStorage.setItem(Store._linksKey, JSON.stringify('[]'));
+    }
 }
