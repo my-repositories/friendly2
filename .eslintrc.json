@@ -16,6 +16,10 @@
         "@typescript-eslint"
     ],
     "rules": {
+        "operator-linebreak": [
+            2,
+            "before"
+        ],
         "object-curly-spacing": [
             2,
             "always"

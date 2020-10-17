@@ -37,7 +37,7 @@ export class GithubHandler extends Handler {
                     .parentNode
                     .querySelector('form[hidden] input[type=submit][value=Unfollow]');
             })
-            .map((link) => link.href);
+            .map((link) => link.href + '?tab=followers');
     }
 
     protected _isAuthorized(): boolean {

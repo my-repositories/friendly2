@@ -24,4 +24,12 @@ export class Lib {
 
         return handler;
     }
+
+    delay(milliseconds: number) {
+        return new Promise((resolve) => setTimeout(resolve, milliseconds));
+    }
+
+    getRandomInRange(min: number, max: number) {
+        return Math.random() * (max - min) + min;
+    }
 }
