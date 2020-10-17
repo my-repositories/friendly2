@@ -45,19 +45,4 @@ export class GithubHandler extends Handler {
             .map((a) => a.textContent.trim().toLowerCase().replace(/\s/g, ' '))
             .find((text) => text === 'sign up' || text === 'sign in');
     }
-
-    private _tryToClickFirstFollowButton(selector: string): boolean {
-        const followButtons = <HTMLButtonElement[]>[
-            ...this._dom.findAllElements(selector),
-        ]
-            .filter((button) => !(button.parentNode as HTMLFormElement).hidden);
-
-        if (followButtons.length) {
-            followButtons[0].click();
-
-            return true;
-        }
-
-        return false;
-    }
 }

@@ -38,6 +38,10 @@ describe(`${Main.name} - Класс приложения:`, () => {
     });
 
     describe('Метод init:', () => {
+        it('вызывает lib.delay', () => {
+            expect(lib.delay).toHaveBeenCalledWith(5000);
+        });
+
         it('вызывает lib.findHandlerByUrl', () => {
             expect(lib.findHandlerByUrl).toHaveBeenCalledWith('https://github.com');
         });
@@ -61,12 +65,13 @@ describe(`${Main.name} - Класс приложения:`, () => {
 
         describe('githubHandler.tryToFollowOnFollowersList вернул true:', () => {
             beforeEach(() => {
+                lib.delay.mockClear();
                 githubHandler.tryToFollowOnFollowersList.mockReturnValue(true);
             });
 
             it('вызывает lib.getRandomInRange', () => {
                 main.tryToFollowOnFollowersList();
-                expect(lib.getRandomInRange).toHaveBeenCalledWith(999, 1987);
+                expect(lib.getRandomInRange).toHaveBeenCalledWith(1999, 3987);
             });
 
             it('вызывает lib.delay', () => {
@@ -77,6 +82,7 @@ describe(`${Main.name} - Класс приложения:`, () => {
 
         describe('githubHandler.tryToFollowOnFollowersList вернул false:', () => {
             beforeEach(() => {
+                lib.delay.mockClear();
                 githubHandler.tryToFollowOnFollowersList.mockReturnValue(false);
             });
 

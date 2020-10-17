@@ -7,6 +7,7 @@ import { injectable } from '~/ioc/decorators/injectable';
 
 @injectable()
 export class Main {
+    private static _pageLoadTime = 5000;
     private _handler: Handler;
     private _nextLink: string;
 
@@ -17,7 +18,8 @@ export class Main {
         private _store: Store,
     ) { }
 
-    init(): void {
+    async init(): Promise<void> {
+        await this._lib.delay(Main._pageLoadTime);
         this._handler = this._lib.findHandlerByUrl(this._dom.getCurrentOrigin());
         this._handler.verifyAuthorization();
     }
@@ -36,7 +38,7 @@ export class Main {
 
     async tryToFollowOnFollowersList(): Promise<void> {
         while (this._handler.tryToFollowOnFollowersList()) {
-            const timeout = Math.floor(this._lib.getRandomInRange(999, 1987));
+            const timeout = Math.floor(this._lib.getRandomInRange(1999, 3987));
 
             await this._lib.delay(timeout);
         }

@@ -35,4 +35,24 @@ export class Handler {
     protected _isAuthorized(): boolean {
         throw new Error('Not Implemented.');
     }
+
+    protected _tryToClickFirstFollowButton(selector: string): boolean {
+        const followButtons = <HTMLButtonElement[]>[
+            ...this._dom.findAllElements(selector),
+        ]
+            .filter((button) => !(button.parentNode as HTMLFormElement).hidden);
+
+        if (followButtons.length) {
+            followButtons[0].click();
+            this._closeVerificationPopup();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    protected _closeVerificationPopup(): void {
+
+    }
 }
