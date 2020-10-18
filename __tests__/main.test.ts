@@ -58,43 +58,21 @@ describe(`${Main.name} - Класс приложения:`, () => {
     });
 
     describe('Метод tryToFollowOnFollowersList:', () => {
-        it('вызывает githubHandler.tryToFollowOnFollowersList', () => {
-            main.tryToFollowOnFollowersList();
+        it('вызывает githubHandler.tryToFollowOnFollowersList', async () => {
+            await main.tryToFollowOnFollowersList();
             expect(githubHandler.tryToFollowOnFollowersList).toHaveBeenCalled();
         });
 
-        describe('githubHandler.tryToFollowOnFollowersList вернул true:', () => {
-            beforeEach(() => {
-                lib.delay.mockClear();
-                githubHandler.tryToFollowOnFollowersList.mockReturnValue(true);
-            });
+        it('вызывает lib.getRandomInRange', async () => {
+            await main.tryToFollowOnFollowersList();
 
-            it('вызывает lib.getRandomInRange', () => {
-                main.tryToFollowOnFollowersList();
-                expect(lib.getRandomInRange).toHaveBeenCalledWith(21 * 101, 42 * 202);
-            });
-
-            it('вызывает lib.delay', () => {
-                main.tryToFollowOnFollowersList();
-                expect(lib.delay).toHaveBeenCalled();
-            });
+            expect(lib.getRandomInRange).toHaveBeenCalledWith(21 * 101, 42 * 202);
         });
 
-        describe('githubHandler.tryToFollowOnFollowersList вернул false:', () => {
-            beforeEach(() => {
-                lib.delay.mockClear();
-                githubHandler.tryToFollowOnFollowersList.mockReturnValue(false);
-            });
+        it('вызывает lib.delay', async () => {
+            await main.tryToFollowOnFollowersList();
 
-            it('не вызывает lib.getRandomInRange', () => {
-                main.tryToFollowOnFollowersList();
-                expect(lib.getRandomInRange).not.toHaveBeenCalled();
-            });
-
-            it('не вызывает lib.delay', () => {
-                main.tryToFollowOnFollowersList();
-                expect(lib.delay).not.toHaveBeenCalled();
-            });
+            expect(lib.delay).toHaveBeenCalled();
         });
     });
 });

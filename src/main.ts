@@ -37,11 +37,11 @@ export class Main {
     }
 
     async tryToFollowOnFollowersList(): Promise<void> {
-        do {
-            const min = this._handler.minimalTimeoutPerRequest + 21 * 101;
-            const max = this._handler.minimalTimeoutPerRequest + 42 * 202;
-            const timeout = Math.floor(this._lib.getRandomInRange(min, max));
+        const min = this._handler.minimalTimeoutPerRequest + 21 * 101;
+        const max = this._handler.minimalTimeoutPerRequest + 42 * 202;
+        const timeout = Math.floor(this._lib.getRandomInRange(min, max));
 
+        do {
             await this._lib.delay(timeout);
         }
         while (this._handler.tryToFollowOnFollowersList());
