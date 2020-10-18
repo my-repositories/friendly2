@@ -37,15 +37,18 @@ export class Main {
     }
 
     async tryToFollowOnFollowersList(): Promise<void> {
-        while (this._handler.tryToFollowOnFollowersList()) {
-            const timeout = Math.floor(this._lib.getRandomInRange(1999, 3987));
+        do {
+            const min = this._handler.minimalTimeoutPerRequest + 21 * 101;
+            const max = this._handler.minimalTimeoutPerRequest + 42 * 202;
+            const timeout = Math.floor(this._lib.getRandomInRange(min, max));
 
             await this._lib.delay(timeout);
         }
+        while (this._handler.tryToFollowOnFollowersList());
     }
 
     async openNextLink(): Promise<void> {
-        await this._lib.delay(101 * this._lib.getRandomInRange(21, 42));
+        await this._lib.delay(this._lib.getRandomInRange(21 * 101, 42 * 202));
 
         if (this._nextLink) {
             this._dom.navigateTo(this._nextLink);

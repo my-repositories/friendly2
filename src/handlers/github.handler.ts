@@ -27,9 +27,9 @@ export class GithubHandler extends Handler {
     }
 
     getProfilesLinks(): string[] {
-        const linkNodes = <HTMLAnchorElement[]>[
-            ...this._dom.findAllElements('.position-relative a[data-hovercard-type="user"]'),
-        ];
+        const linkNodes = this._dom
+            .findAllElements<HTMLAnchorElement>('.position-relative a[data-hovercard-type="user"]');
+
         return linkNodes
             .filter((link) => link.classList.contains('no-underline'))
             .filter((link) => {

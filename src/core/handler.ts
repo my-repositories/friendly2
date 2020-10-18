@@ -8,6 +8,10 @@ export class Handler {
         protected _logger: Logger,
     ) { }
 
+    get minimalTimeoutPerRequest() {
+        return 0;
+    }
+
     canHandle(url: string): boolean {
         return this._url === url;
     }
@@ -37,9 +41,8 @@ export class Handler {
     }
 
     protected _tryToClickFirstFollowButton(selector: string): boolean {
-        const followButtons = <HTMLButtonElement[]>[
-            ...this._dom.findAllElements(selector),
-        ]
+        const followButtons = this._dom
+            .findAllElements<HTMLButtonElement>(selector)
             .filter((button) => !(button.parentNode as HTMLFormElement).hidden);
 
         if (followButtons.length) {

@@ -71,7 +71,7 @@ describe(`${Main.name} - Класс приложения:`, () => {
 
             it('вызывает lib.getRandomInRange', () => {
                 main.tryToFollowOnFollowersList();
-                expect(lib.getRandomInRange).toHaveBeenCalledWith(1999, 3987);
+                expect(lib.getRandomInRange).toHaveBeenCalledWith(21 * 101, 42 * 202);
             });
 
             it('вызывает lib.delay', () => {

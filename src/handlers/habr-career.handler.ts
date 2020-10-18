@@ -10,13 +10,31 @@ export class HabrCareer extends Handler {
         logger: Logger,
     ) {
         super(
-            'habr.career',
+            'https://career.habr.com',
             dom,
             logger,
         );
     }
 
+    get minimalTimeoutPerRequest() {
+        return 10 * 1000;
+    }
+
+    tryToFollowOnProfile(): boolean {
+        return this._tryToClickFirstFollowButton('.user_info .add_to_friends');
+    }
+
+    tryToFollowOnFollowersList(): boolean {
+        return this._tryToClickFirstFollowButton('.user_friends .add_to_friends');
+    }
+
+    getProfilesLinks(): string[] {
+        return this._dom.findAllElements<HTMLAnchorElement>('.user_friends_item .avatar a')
+            .filter((link) => link.parentNode.parentNode.querySelector('.friendship_button .add_to_friends'))
+            .map((link) => link.href + '/friends');
+    }
+
     protected _isAuthorized(): boolean {
-        return false;
+        return !this._dom.findElement('.header__sign_in');
     }
 }

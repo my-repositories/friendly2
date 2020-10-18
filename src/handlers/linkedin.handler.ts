@@ -27,8 +27,9 @@ export class LinkedInHandler extends Handler {
     }
 
     getProfilesLinks(): string[] {
-        return [...this._dom.findAllElements('.pv-browsemap-section__member, .pv-pymk-section__member')]
-            .map((link: HTMLAnchorElement) => link.href);
+        return this._dom
+            .findAllElements<HTMLAnchorElement>('.pv-browsemap-section__member, .pv-pymk-section__member')
+            .map((link) => link.href);
     }
 
     protected _isAuthorized(): boolean {
@@ -37,7 +38,7 @@ export class LinkedInHandler extends Handler {
 
     protected _closeVerificationPopup(): void {
         const element = this._dom
-            .findElement('.artdeco-modal__actionbar .artdeco-button--primary') as HTMLButtonElement;
+            .findElement<HTMLButtonElement>('.artdeco-modal__actionbar .artdeco-button--primary');
 
         if (element) {
             element.click();

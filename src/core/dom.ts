@@ -6,11 +6,11 @@ export class Dom {
         return document.location.origin;
     }
 
-    findElement(selector: string): Element {
+    findElement<T extends Element>(selector: string): T {
         return document.querySelector(selector);
     }
 
-    findAllElements(selector: string): Element[] {
+    findAllElements<T extends Element>(selector: string): T[] {
         return Array.from(document.querySelectorAll(selector));
     }
 
