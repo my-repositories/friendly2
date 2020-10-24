@@ -25,7 +25,8 @@ jobs:
       - name: Build project
         run: |
           yarn build:prod
-          zip --junk-paths friendly2.zip build/*
+          cd build
+          zip ../friendly2.zip ./*/
 
       - name: Create Release
         id: create_release
