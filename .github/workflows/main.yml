@@ -26,7 +26,7 @@ jobs:
         run: |
           yarn build:prod
           cd build
-          zip ../friendly2.zip ./**/*
+          zip ../friendly2.zip ./* ./**/*
 
       - name: Create Release
         id: create_release
