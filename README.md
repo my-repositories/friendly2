@@ -21,7 +21,7 @@ Google Chrome extension which automates sending requests to friends/subscribers.
 
 #### How to Build
 
-```
+```sh
 yarn test
 yarn run build:prod
 
