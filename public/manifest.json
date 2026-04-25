@@ -27,6 +27,10 @@
     {
       "matches": ["https://likes.fm/*"],
       "js": ["sites/likes_fm.js"]
+    },
+      {
+      "matches": ["https://career.habr.com/*"],
+      "js": ["sites/habr_career.js"]
     }
   ]
 }

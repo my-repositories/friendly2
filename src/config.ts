@@ -6,4 +6,11 @@ export const SUPPORTED_SERVICES = [
     pattern: "*://*.likes.fm/*",
     icon: "https://likes.fm/static/images/durov.ico"
   },
+  {
+    id: "habrcareer",
+    name: "Habr Career",
+    url: "https://career.habr.com",
+    pattern: "*://career.habr.com/*",
+    icon: "https://career.habr.com/favicon.ico"
+  }
 ];
