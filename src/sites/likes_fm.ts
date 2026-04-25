@@ -1,5 +1,6 @@
 import { LIKES_FM_TASKS } from "src/tasks";
 import { getRandomDelay, humanClick } from "src/utils";
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 class LikesFm
 {
@@ -42,50 +43,47 @@ class LikesFm
 
     const taskLink = offerBlock.querySelector('a.open_offer') as HTMLAnchorElement;
 
-    if (taskLink) {
-      const currentHref = taskLink.href;
-      console.log(`[friendly2] Кликаю по задаче ${type}: ${currentHref}`);
-      await chrome.storage.session.set({
-        vk_currentAutomation: {
-          type: type,
-          url: currentHref 
-        }
-      });
-      await humanClick(taskLink);
+    if (!taskLink) {
+      return;
+    }
 
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          (document.querySelector('.popup_box_container .close') as HTMLElement)?.click();
-          const freshBlock = document.querySelector(moduleSelector);
-          const stillExists = freshBlock?.querySelector(`a.open_offer[href="${currentHref}"]`);
-          
-          if (!stillExists) {
-            console.log(`[friendly2] Задача ${type} успешно ушла из списка.`);
-            resolve();
-            return;
-          }
+    const currentHref = taskLink.href;
+    console.log(`[friendly2] Кликаю по задаче ${type}: ${currentHref}`);
+    
+    await chrome.storage.session.set({
+      vk_currentAutomation: { type, url: currentHref }
+    });
+    
+    await humanClick(taskLink);
+    await delay(getRandomDelay(6000, 12000));
 
-          console.log(`[friendly2] Задача ${type} не исчезла, запускаю принудительную проверку.`);
-          const checkButton = freshBlock?.querySelector('span.do_offer') as HTMLElement;
-          checkButton?.click();
+    (document.querySelector('.popup_box_container .close') as HTMLElement)?.click();
+    
+    let freshBlock = document.querySelector(moduleSelector);
+    let stillExists = freshBlock?.querySelector(`a.open_offer[href="${currentHref}"]`);
 
-          setTimeout(() => {
-            (document.querySelector('.popup_box_container .close') as HTMLElement)?.click();
-            const freshBlock2 = document.querySelector(moduleSelector);
-            const stillExists2 = freshBlock2?.querySelector(`a.open_offer[href="${currentHref}"]`);
-            
-            if (stillExists2) {
-              console.log(`[friendly2] Задача ${type} не исчезла, нажимаю на крестик.`);
-              const freshSkipButton = offerBlock.querySelector('div.x_button') as HTMLElement;
-              freshSkipButton?.click();
-            } else {
-              console.log(`[friendly2] Задача ${type} успешно ушла из списка.`);
-            }          
-          }, getRandomDelay(2000, 4000));
-          
-          resolve();
-        }, getRandomDelay(6000, 12000));
-      });
+    if (!stillExists) {
+      console.log(`[friendly2] Задача ${type} успешно ушла из списка.`);
+      return;
+    }
+
+    console.log(`[friendly2] Задача ${type} не исчезла, запускаю принудительную проверку.`);
+    const checkButton = freshBlock?.querySelector('span.do_offer') as HTMLElement;
+    checkButton?.click();
+
+    await delay(getRandomDelay(2000, 4000));
+
+    (document.querySelector('.popup_box_container .close') as HTMLElement)?.click();
+    
+    const freshBlock2 = document.querySelector(moduleSelector);
+    const stillExists2 = freshBlock2?.querySelector(`a.open_offer[href="${currentHref}"]`);
+
+    if (stillExists2) {
+      console.log(`[friendly2] Задача ${type} не исчезла, нажимаю на крестик.`);
+      const freshSkipButton = freshBlock2?.querySelector('div.x_button') as HTMLElement;
+      freshSkipButton?.click();
+    } else {
+      console.log(`[friendly2] Задача ${type} успешно ушла из списка.`);
     }
   }
 
