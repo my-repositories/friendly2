@@ -1,5 +1,5 @@
 import { LIKES_FM_TASKS } from "src/tasks";
-import { getRandomDelay } from "src/utils";
+import { getRandomDelay, humanClick } from "src/utils";
 
 class LikesFm
 {
@@ -31,23 +31,7 @@ class LikesFm
     throw "Не могу получить ни одного задания, потому что все модули отключены!";
   }
 
-  private async humanClick(element: HTMLElement): Promise<void> {
-    const events = ['mousedown', 'mouseup', 'click'];
-    
-    events.forEach(eventType => {
-      const event = new MouseEvent(eventType, {
-        view: window,
-        bubbles: true,
-        cancelable: true,
-        buttons: 1,
-        clientX: element.getBoundingClientRect().left + 5,
-        clientY: element.getBoundingClientRect().top + 5
-      });
-      element.dispatchEvent(event);
-    });
-  }
-
-  private async processTask(type: string): Promise<void> {
+  private async processTask(type: LIKES_FM_TASKS): Promise<void> {
     const moduleSelector = `.module.page_list_module[type="${type}"]:not(.empty)`;
     const offerBlock = document.querySelector(moduleSelector) as HTMLElement;
 
@@ -56,13 +40,18 @@ class LikesFm
       return;
     }
 
-    const taskLink = offerBlock.querySelector('a.open_offer') as HTMLAnchorElement;
-    const skipButton = offerBlock.querySelector('div.x_button') as HTMLElement;
+    const taskLink = [...offerBlock.querySelectorAll('a.open_offer')].at(-1) as HTMLAnchorElement;
 
-    if (taskLink && skipButton) {
+    if (taskLink) {
       const currentHref = taskLink.href;
       console.log(`[friendly2] Кликаю по задаче ${type}: ${currentHref}`);
-      await this.humanClick(taskLink);
+      await chrome.storage.session.set({
+        vk_currentAutomation: {
+          type: type,
+          url: currentHref 
+        }
+      });
+      await humanClick(taskLink);
 
       return new Promise((resolve) => {
         setTimeout(() => {
@@ -71,7 +60,7 @@ class LikesFm
           
           if (stillExists) {
             console.log(`[friendly2] Задача ${type} не исчезла, нажимаю на крестик.`);
-            const freshSkipButton = freshBlock?.querySelector('div.x_button') as HTMLElement;
+            const freshSkipButton = [...offerBlock.querySelectorAll('div.x_button')].at(-1) as HTMLElement;
             freshSkipButton?.click();
           } else {
             console.log(`[friendly2] Задача ${type} успешно ушла из списка.`);

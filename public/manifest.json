@@ -26,15 +26,23 @@
   "content_scripts": [
     {
       "matches": ["https://likes.fm/*"],
-      "js": ["sites/likes_fm.js"]
+      "js": ["sites/likes_fm.js"],
+      "run_at": "document_idle"
     },
     {
       "matches": ["https://career.habr.com/*"],
-      "js": ["sites/habr_career.js"]
+      "js": ["sites/habr_career.js"],
+      "run_at": "document_idle"
     },
     {
       "matches": ["https://github.com/*"],
-      "js": ["sites/github.js"]
+      "js": ["sites/github.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://vk.com/*"],
+      "js": ["sites/vk_com.js"],
+      "run_at": "document_idle"
     }
   ]
 }

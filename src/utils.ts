@@ -44,3 +44,23 @@ export const storage = {
 export function getRandomDelay(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
+
+export async function humanClick(element: HTMLElement): Promise<void> {
+	if (!element) {
+		return;
+	}
+
+	const events = ['mousedown', 'mouseup', 'click'];
+	
+	events.forEach(eventType => {
+		const event = new MouseEvent(eventType, {
+			view: window,
+			bubbles: true,
+			cancelable: true,
+			buttons: 1,
+			clientX: element.getBoundingClientRect().left + 5,
+			clientY: element.getBoundingClientRect().top + 5
+		});
+		element.dispatchEvent(event);
+	});
+}

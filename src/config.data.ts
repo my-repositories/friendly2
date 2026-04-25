@@ -34,7 +34,7 @@ export const SERVICES = [
       { id: LIKES_FM_TASKS.SUB, name: "Subscribers", title: "Автоматические подписки на людей", default: true, },
       { id: LIKES_FM_TASKS.GROUP, name: "Members", title: "Автоматические подписки в сообщества", default: true, },
       { id: LIKES_FM_TASKS.COMMENT, name: "Comments", title: "Автоматические комментарии", default: false, },
-      { id: LIKES_FM_TASKS.POLL, name: "Votings", title: "Автоматические опросы", default: true, },
+      { id: LIKES_FM_TASKS.POLL, name: "Votings", title: "Автоматические опросы", default: false, },
     ],
   },
 ];
