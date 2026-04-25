@@ -6,6 +6,7 @@ import { SUPPORTED_SERVICES } from "src/config";
 
 export function App() {
   const [isActive, setIsActive] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     chrome.storage.local.get(["extensionEnabled"], (res) => {
@@ -13,6 +14,12 @@ export function App() {
         setIsActive(res.extensionEnabled);
       }
     });
+
+    const frame = requestAnimationFrame(() => {
+      const timer = setTimeout(() => setIsVisible(true), 40);
+      return () => clearTimeout(timer);
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   const toggleExtension = async () => {
@@ -46,24 +53,42 @@ export function App() {
   };
 
   return (
-    <div className="w-72 bg-[#0f111a] text-slate-200 overflow-hidden font-sans border border-white/5 shadow-2xl">
+    <div className="w-72 bg-[#0f111a] text-slate-200 overflow-hidden font-sans border border-white/5 shadow-2xl transition-opacity duration-500">
       <AppHeader 
         isActive={isActive} 
         onToggle={toggleExtension} 
         onOpenOptions={openOptions} 
       />
+      
       <div className="p-4 pt-5 space-y-3">
-        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-1">Доступные сервисы</p>
-        {SUPPORTED_SERVICES.map((service) => (
-          <AppSiteItem 
+        <p className={`text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-1 transition-all duration-500 ${
+          isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
+        }`}>
+          Доступные сервисы
+        </p>
+
+        {SUPPORTED_SERVICES.map((service, index) => (
+          <div
             key={service.id}
-            name={service.name}
-            iconUrl={service.icon}
-            onClick={() => handleNavigate(service.url, service.pattern)}
-          />
+            style={{ 
+              transitionDelay: `${(index + 1) * 80}ms`,
+            }}
+            className={`transition-all duration-500 transform ${
+              isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-95"
+            }`}
+          >
+            <AppSiteItem 
+              name={service.name}
+              iconUrl={service.icon}
+              onClick={() => handleNavigate(service.url, service.pattern)}
+            />
+          </div>
         ))}
       </div>
-      <AppFooter />
+
+      <div className={`transition-all duration-700 delay-300 ${isVisible ? "opacity-100" : "opacity-0"}`}>
+        <AppFooter />
+      </div>
     </div>
   );
 }
