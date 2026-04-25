@@ -157,9 +157,21 @@ const OptionsPage = () => {
             </div>
           </div>
 
-          <button className="w-full mt-8 py-4 bg-[#5d5fef] hover:bg-[#4a4ce0] text-white rounded-[22px] font-bold text-[13px] uppercase tracking-widest transition-all active:scale-[0.98] shadow-[0_10px_25px_-8px_rgba(93,95,239,0.5)]">
-            Сохранить настройки
-          </button>
+          <div className="mt-8 flex flex-col items-center gap-2">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/5">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Настройки сохраняются автоматически
+              </span>
+            </div>
+            
+            <button 
+              onClick={() => window.close()}
+              className="mt-2 text-[11px] text-slate-500 hover:text-indigo-400 font-bold uppercase tracking-widest transition-colors"
+            >
+              Закрыть настройки
+            </button>
+          </div>
         </div>
       </div>
     </div>
