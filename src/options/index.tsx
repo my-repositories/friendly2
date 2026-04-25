@@ -21,7 +21,7 @@ const OptionsPage = () => {
     {
       title: "Likes.FM",
       key: likes_fmSettingsKey,
-      icon: SUPPORTED_SERVICES.find(x => x.id === 'habrcareer')?.icon,
+      icon: SUPPORTED_SERVICES.find(x => x.id === 'likesfm')?.icon,
       state: likesFmSettings,
       update: updateLikesFmSettings,
       options: [
@@ -36,7 +36,7 @@ const OptionsPage = () => {
     {
       title: "Habr Career",
       key: habr_careerSettingsKey,
-      icon: SUPPORTED_SERVICES.find(x => x.id === 'likesfm')?.icon,
+      icon: SUPPORTED_SERVICES.find(x => x.id === 'habrcareer')?.icon,
       state: habrSettings,
       update: updateHabrSettings,
       options: [
