@@ -69,7 +69,6 @@ async function run() {
   const { extensionEnabled } = await chrome.storage.local.get(["extensionEnabled"]);
   const { vk_currentAutomation } = await chrome.storage.session.get("vk_currentAutomation");
 
-  console.warn({extensionEnabled, vk_currentAutomation});
   if (!extensionEnabled || !vk_currentAutomation) {
     alert("!extensionEnabled || !vk_currentAutomation" + (vk_currentAutomation && vk_currentAutomation.type || '??'))
     return;
