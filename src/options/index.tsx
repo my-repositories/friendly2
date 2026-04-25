@@ -74,9 +74,9 @@ const OptionsPage = () => {
               console.log({mod});
               return (
                 <div key={mod.id} onClick={() => toggleOption(currentService.id, mod.id)} className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-[#242938] border-indigo-500/20' : 'bg-[#1e2230] border-transparent'}`}>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4" title={mod.title}>
                     <mod.renderIcon size={18} />
-                    <span className="font-semibold text-slate-200 text-sm">{mod.id}</span>
+                    <span className="font-semibold text-slate-200 text-sm">{mod.name}</span>
                   </div>
                   <div className={`w-10 h-5 rounded-full relative transition-colors ${isActive ? 'bg-indigo-500' : 'bg-[#33394d]'}`}>
                     <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-all transform ${isActive ? 'translate-x-5' : ''}`} />
