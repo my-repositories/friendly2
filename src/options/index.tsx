@@ -1,75 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { 
-  Repeat2, Heart, UserPlus, Users, MessageSquare, BarChart3, Settings2, Star, UserCheck 
-} from "lucide-react";
-import {
-  defaultLikesFmSettings, likes_fmSettingsKey, LikesFmOptions, type LikesFmSettings
-} from "src/options/likes_fmSettings";
-import {
-  defaultHabrCareerSettings, habr_careerSettingsKey, HabrCareerOptions, type HabrCareerSettings
-} from "src/options/habr_careerSettings";
-import {
-  defaultGithubSettings, githubSettingsKey, GithubOptions, type GithubSettings
-} from "src/options/githubSettings";
 import { SUPPORTED_SERVICES } from "src/config";
 
 const OptionsPage = () => {
-  const [likesFmSettings, updateLikesFmSettings] = useState<LikesFmSettings>(defaultLikesFmSettings);
-  const [habrCareerSettings, updateHabrCareerSettings] = useState<HabrCareerSettings>(defaultHabrCareerSettings);
-  const [githubSettings, updateGithubSettings] = useState<GithubSettings>(defaultGithubSettings);
+  const [allSettings, setAllSettings] = useState<Record<string, any>>({});
   const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
 
-  const likesFm = SUPPORTED_SERVICES.find(x => x.id === 'likesfm');
-  const habrCareer = SUPPORTED_SERVICES.find(x => x.id === 'habrcareer');
-  const github = SUPPORTED_SERVICES.find(x => x.id === 'github');
-  const sections = [
-    {
-      title: likesFm?.name,
-      key: likes_fmSettingsKey,
-      icon: likesFm?.icon,
-      state: likesFmSettings,
-      update: updateLikesFmSettings,
-      options: [
-        { id: LikesFmOptions.REPOSTS, icon: <Repeat2 size={18} className="text-blue-400" /> },
-        { id: LikesFmOptions.LIKES, icon: <Heart size={18} className="text-pink-500" /> },
-        { id: LikesFmOptions.SUBSCRIBERS, icon: <UserPlus size={18} className="text-purple-400" /> },
-        { id: LikesFmOptions.MEMBERS, icon: <Users size={18} className="text-indigo-400" /> },
-        { id: LikesFmOptions.COMMENTS, icon: <MessageSquare size={18} className="text-slate-400" /> },
-        { id: LikesFmOptions.VOTINGS, icon: <BarChart3 size={18} className="text-emerald-400" /> },
-      ]
-    },
-    {
-      title: habrCareer?.name,
-      key: habr_careerSettingsKey,
-      icon: habrCareer?.icon,
-      state: habrCareerSettings,
-      update: updateHabrCareerSettings,
-      options: [
-        { id: HabrCareerOptions.FRIENDS, icon: <UserCheck size={18} className="text-orange-400" /> },
-      ]
-    },
-    {
-      title: github?.name,
-      key: githubSettingsKey,
-      icon: github?.icon,
-      state: githubSettings,
-      update: updateGithubSettings,
-      options: [
-        { id: GithubOptions.FOLLOWERS, icon: <Users size={18} className="text-green-400" /> },
-        { id: GithubOptions.STARS, icon: <Star size={18} className="text-yellow-400" /> },
-      ]
-    }
-  ];
-
   useEffect(() => {
-    const keys = [likes_fmSettingsKey, habr_careerSettingsKey];
-    chrome.storage.local.get(keys, (result) => {
-      if (result[likes_fmSettingsKey]) updateLikesFmSettings(result[likes_fmSettingsKey]);
-      if (result[habr_careerSettingsKey]) updateHabrCareerSettings(result[habr_careerSettingsKey]);
-      if (result[githubSettingsKey]) updateGithubSettings(result[githubSettingsKey]);
-    });
+    const keys = SUPPORTED_SERVICES.map(s => s.id);
+    chrome.storage.local.get(keys, (res) => setAllSettings(res));
 
     const frame = requestAnimationFrame(() => {
       const timer = setTimeout(() => setIsVisible(true), 50);
@@ -78,18 +18,13 @@ const OptionsPage = () => {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  const toggleOption = (sectionKey: string, optionId: string) => {
-    const section = sections.find(s => s.key === sectionKey);
-    if (!section) return;
-
-    const newSettings = {
-      ...section.state,
-      [optionId]: !section.state[optionId as keyof typeof section.state]
-    };
-
-    section.update(newSettings as any);
-    chrome.storage.local.set({ [sectionKey]: newSettings });
+  const toggleOption = (serviceId: string, moduleId: string) => {
+    const newSettings = { ...allSettings[serviceId], [moduleId]: !allSettings[serviceId]?.[moduleId] };
+    setAllSettings({ ...allSettings, [serviceId]: newSettings });
+    chrome.storage.local.set({ [serviceId]: newSettings });
   };
+
+  const currentService = SUPPORTED_SERVICES[activeTab];
 
   return (
     <div className="min-h-screen bg-[#0f111a] flex items-center justify-center p-6 font-sans">
@@ -112,9 +47,9 @@ const OptionsPage = () => {
           
           {/* Tabs with Icons */}
           <div className="flex bg-[#0f111a]/50 p-1.5 rounded-2xl mb-8 border border-white/5">
-            {sections.map((section, i) => (
+            {SUPPORTED_SERVICES.map((section, i) => (
               <button
-                key={section.key}
+                key={section.id}
                 onClick={() => setActiveTab(i)}
                 className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl transition-all duration-300 ${
                   activeTab === i 
@@ -124,57 +59,33 @@ const OptionsPage = () => {
               >
                 <img 
                   src={section.icon} 
-                  alt="" 
+                  alt={section.name} 
                   className={`w-4 h-4 object-contain transition-all ${activeTab === i ? 'grayscale-0 scale-110' : 'grayscale opacity-50'}`} 
                 />
-                <span className="text-[11px] font-bold uppercase tracking-wider">{section.title}</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider">{section.name}</span>
               </button>
             ))}
           </div>
 
-          {/* Slider */}
-          <div className="overflow-hidden">
-            <div 
-              className="flex transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]" 
-              style={{ transform: `translateX(-${activeTab * 100}%)` }}
-            >
-              {sections.map((section, sIndex) => (
-                <div key={section.key} className="w-full flex-shrink-0 px-1">
-                  <div className="flex items-center gap-2 mb-6 text-slate-500 ml-1">
-                    <Settings2 size={12} />
-                    <p className="text-[10px] font-bold uppercase tracking-[2px]">Модули сервиса</p>
+          <div className="px-8 pb-10 min-h-[350px]">
+          <div className="space-y-3">
+            {currentService.modules.map((mod) => {
+              const isActive = allSettings[currentService.id]?.[mod.id];
+              console.log({mod});
+              return (
+                <div key={mod.id} onClick={() => toggleOption(currentService.id, mod.id)} className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-[#242938] border-indigo-500/20' : 'bg-[#1e2230] border-transparent'}`}>
+                  <div className="flex items-center gap-4">
+                    <mod.renderIcon size={18} />
+                    <span className="font-semibold text-slate-200 text-sm">{mod.id}</span>
                   </div>
-                  
-                  <div className="space-y-2.5 min-h-[340px]">
-                    {section.options.map((opt) => {
-                      const isActive = (section.state as any)[opt.id];
-                      return (
-                        <div 
-                          key={opt.id}
-                          onClick={() => toggleOption(section.key, opt.id)}
-                          className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all duration-300 ${
-                            isActive ? 'bg-[#242938] border-indigo-500/20 shadow-lg' : 'bg-[#1e2230] border-transparent hover:border-white/5'
-                          }`}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-500 bg-slate-800/40'}`}>
-                                {opt.icon}
-                            </div>
-                            <span className="font-semibold text-slate-200 text-[14px]">{opt.id}</span>
-                          </div>
-                          
-                          {/* Toggle */}
-                          <div className={`w-10 h-5 rounded-full relative transition-colors duration-300 ${isActive ? 'bg-indigo-500' : 'bg-[#33394d]'}`}>
-                            <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform duration-300 transform ${isActive ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className={`w-10 h-5 rounded-full relative transition-colors ${isActive ? 'bg-indigo-500' : 'bg-[#33394d]'}`}>
+                    <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-all transform ${isActive ? 'translate-x-5' : ''}`} />
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
+        </div>
 
           <div className="mt-8 flex flex-col items-center gap-2">
             <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/5">

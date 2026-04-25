@@ -1,25 +1,20 @@
-import {
-  defaultLikesFmSettings, likes_fmSettingsKey, LikesFmOptions, type LikesFmSettings
-} from "src/options/likes_fmSettings";
-
 class LikesFm
 {
-  private currentTask?: LikesFmOptions;
+  private id = "likesfm";
+  private currentTask: any;
   private hasProcessingTask: boolean = false;
-  private userSettings: LikesFmSettings = defaultLikesFmSettings;
+  private userSettings: any;
 
   private getNextTask(): void {
   }
 
   public async init(): Promise<LikesFm> {
-    const settings = await chrome.storage.local.get([likes_fmSettingsKey]);
-    
-    this.userSettings = settings[likes_fmSettingsKey];
+    const settings = await chrome.storage.local.get([this.id]);
+    this.userSettings = settings[this.id];
 
     chrome.storage.onChanged.addListener((changes, area) => {
-      console.log({changes, area});
-      if (area === 'local' && changes[likes_fmSettingsKey]) {
-        this.userSettings = changes[likes_fmSettingsKey].newValue;
+      if (area === 'local' && changes[this.id]) {
+        this.userSettings = changes[this.id].newValue;
       }
     });
 
@@ -27,25 +22,18 @@ class LikesFm
   }
 
   public async run(): Promise<void> {
-    console.log("GO");
+    console.log("GO", this.userSettings);
   }
 }
 
 window.onload = async () => {
-  const runExtension = async () => {
-    const { extensionEnabled } = await chrome.storage.local.get(["extensionEnabled"]);
+  const { extensionEnabled } = await chrome.storage.local.get(["extensionEnabled"]);
+  
+  if (!extensionEnabled) {
+    console.log("friendly2: расширение отключено пользователем.");
+    return;
+  }
 
-    console.warn({extensionEnabled});
-    
-    if (!extensionEnabled) {
-      console.log("friendly2: расширение отключено пользователем.");
-      return;
-    }
-
-    const app = await new LikesFm().init();
-    await app.run();
-  };
-
-  runExtension();
-  console.log('runExtension();');
+  const app = await new LikesFm().init();
+  await app.run();
 };
