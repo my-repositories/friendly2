@@ -27,11 +27,25 @@ class LikesFm
   }
 
   public async run(): Promise<void> {
-    
+    console.log("GO");
   }
 }
 
 window.onload = async () => {
-  const app = await new LikesFm().init();
-  await app.run();
+  const runExtension = async () => {
+    const { extensionEnabled } = await chrome.storage.local.get(["extensionEnabled"]);
+
+    console.warn({extensionEnabled});
+    
+    if (!extensionEnabled) {
+      console.log("friendly2: расширение отключено пользователем.");
+      return;
+    }
+
+    const app = await new LikesFm().init();
+    await app.run();
+  };
+
+  runExtension();
+  console.log('runExtension();');
 };

@@ -1,7 +1,25 @@
-import React from "react";
-import { Settings, ExternalLink, Zap, Heart } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Settings, ExternalLink, Zap, Heart, Power } from "lucide-react";
 
 export function App() {
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    chrome.storage.local.get(["extensionEnabled"], (res) => {
+      if (res.extensionEnabled !== undefined) {
+        setIsActive(res.extensionEnabled);
+      }
+    });
+  }, []);
+
+  const toggleExtension = async () => {
+    const newState = !isActive;
+    setIsActive(newState);
+    await chrome.storage.local.set({ extensionEnabled: newState });
+    const tabs = await chrome.tabs.query({ url: "*://*.likes.fm/*" });
+    tabs.forEach(tab => tab.id && chrome.tabs.reload(tab.id));
+  };
+
   const navigateToLikesFm = (e: React.MouseEvent) => {
     const url = "https://likes.fm";
 
@@ -28,18 +46,23 @@ export function App() {
   return (
     <div className="w-72 bg-[#0f111a] text-slate-200 overflow-hidden font-sans border border-white/5 shadow-2xl">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[#8b5cf6] to-[#6d28d9] p-5 relative">
+      <div className={`p-5 relative transition-colors duration-500 ${isActive ? 'bg-gradient-to-br from-[#8b5cf6] to-[#6d28d9]' : 'bg-slate-800'}`}>
         <div className="flex justify-between items-center relative z-10">
           <div className="flex items-center gap-2">
-            <Zap size={18} className="text-white fill-white" />
+            <Zap size={18} className={`${isActive ? 'text-white fill-white' : 'text-slate-400'}`} />
             <h1 className="text-lg font-bold tracking-tight text-white">friendly 2</h1>
           </div>
-          <button 
-            onClick={openOptions}
-            className="p-2 hover:bg-white/20 rounded-xl transition-all active:scale-90 text-white/80 hover:text-white"
-          >
-            <Settings size={18} />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Кнопка питания */}
+            <button 
+              onClick={toggleExtension}
+              className={`p-2 rounded-xl transition-all active:scale-90 border border-white/10 ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`}
+              title={isActive ? "Выключить" : "Включить"}
+            >
+              <Power size={16} />
+            </button>
+            <button onClick={openOptions} className="p-2 hover:bg-white/20 rounded-xl text-white/80"><Settings size={18} /></button>
+          </div>
         </div>
       </div>
 
@@ -64,10 +87,16 @@ export function App() {
           <ExternalLink size={14} className="text-slate-500 opacity-40 group-hover:opacity-100 transition-opacity" />
         </button>
 
-        {/* Статус */}
-        <div className="flex items-center justify-center gap-2 py-2 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
-          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
-          <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest text-center">Система активна</span>
+        {/* Статус (теперь динамический) */}
+        <div className={`flex items-center justify-center gap-2 py-2 border rounded-xl transition-all ${
+          isActive 
+            ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500' 
+            : 'bg-rose-500/5 border-rose-500/10 text-rose-500'
+        }`}>
+          <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-rose-500'}`}></div>
+          <span className="text-[10px] font-bold uppercase tracking-widest">
+            {isActive ? 'Система активна' : 'Система отключена'}
+          </span>
         </div>
       </div>
 
