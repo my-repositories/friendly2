@@ -40,7 +40,7 @@ class LikesFm
       return;
     }
 
-    const taskLink = [...offerBlock.querySelectorAll('a.open_offer')].at(-1) as HTMLAnchorElement;
+    const taskLink = offerBlock.querySelector('a.open_offer') as HTMLAnchorElement;
 
     if (taskLink) {
       const currentHref = taskLink.href;
@@ -58,16 +58,32 @@ class LikesFm
           const freshBlock = document.querySelector(moduleSelector);
           const stillExists = freshBlock?.querySelector(`a.open_offer[href="${currentHref}"]`);
           
-          if (stillExists) {
-            console.log(`[friendly2] Задача ${type} не исчезла, нажимаю на крестик.`);
-            const freshSkipButton = [...offerBlock.querySelectorAll('div.x_button')].at(-1) as HTMLElement;
-            freshSkipButton?.click();
-          } else {
+          if (!stillExists) {
             console.log(`[friendly2] Задача ${type} успешно ушла из списка.`);
+            resolve();
+            return;
           }
+
+          console.log(`[friendly2] Задача ${type} не исчезла, запускаю принудительную проверку.`);
+          const checkButton = freshBlock?.querySelector('span.do_offer') as HTMLElement;
+          checkButton?.click();
+
+          setTimeout(() => {
+            (document.querySelector('.popup_box_container.alert .close') as HTMLElement)?.click()
+            const freshBlock2 = document.querySelector(moduleSelector);
+            const stillExists2 = freshBlock2?.querySelector(`a.open_offer[href="${currentHref}"]`);
+            
+            if (stillExists2) {
+              console.log(`[friendly2] Задача ${type} не исчезла, нажимаю на крестик.`);
+              const freshSkipButton = offerBlock.querySelector('div.x_button') as HTMLElement;
+              freshSkipButton?.click();
+            } else {
+              console.log(`[friendly2] Задача ${type} успешно ушла из списка.`);
+            }          
+          }, getRandomDelay(2000, 4000));
           
           resolve();
-        }, getRandomDelay(8000, 14000));
+        }, getRandomDelay(6000, 12000));
       });
     }
   }

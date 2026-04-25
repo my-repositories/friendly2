@@ -46,21 +46,40 @@ export function getRandomDelay(min: number, max: number): number {
 }
 
 export async function humanClick(element: HTMLElement): Promise<void> {
-	if (!element) {
-		return;
-	}
+  if (!element) return;
 
-	const events = ['mousedown', 'mouseup', 'click'];
-	
-	events.forEach(eventType => {
-		const event = new MouseEvent(eventType, {
-			view: window,
-			bubbles: true,
-			cancelable: true,
-			buttons: 1,
-			clientX: element.getBoundingClientRect().left + 5,
-			clientY: element.getBoundingClientRect().top + 5
-		});
-		element.dispatchEvent(event);
-	});
+  const rect = element.getBoundingClientRect();
+  // Рандомизируем точку клика (не ровно в угол +5, а в случайное место внутри элемента)
+  const x = rect.left + Math.random() * (rect.width * 0.8);
+  const y = rect.top + Math.random() * (rect.height * 0.8);
+
+  const commonConfig = {
+    view: window,
+    bubbles: true,
+    cancelable: true,
+    clientX: x,
+    clientY: y,
+    buttons: 1
+  };
+
+  // 1. Имитируем наведение
+  element.dispatchEvent(new MouseEvent('mouseenter', commonConfig));
+  element.dispatchEvent(new MouseEvent('mouseover', commonConfig));
+
+  // 2. Нажатие (Pointer + Mouse)
+  element.dispatchEvent(new PointerEvent('pointerdown', { ...commonConfig, isPrimary: true }));
+  element.dispatchEvent(new MouseEvent('mousedown', commonConfig));
+
+  // Фокусируем элемент, как это делает браузер
+  element.focus();
+
+  // 3. Небольшая задержка "зажатия" кнопки (от 50 до 150 мс)
+  await new Promise(resolve => setTimeout(resolve, getRandomDelay(50, 150)));
+
+  // 4. Отпускание
+  element.dispatchEvent(new PointerEvent('pointerup', { ...commonConfig, isPrimary: true }));
+  element.dispatchEvent(new MouseEvent('mouseup', commonConfig));
+
+  // 5. Финальный клик
+  element.dispatchEvent(new MouseEvent('click', { ...commonConfig, detail: 1 }));
 }
