@@ -1,12 +1,14 @@
 import {  defaultLikesFmSettings, likes_fmSettingsKey } from "src/options/likes_fmSettings";
-import { defaulthabrCareerSettings, habr_careerSettingsKey } from "src/options/habr_careerSettings";
+import { defaultHabrCareerSettings, habr_careerSettingsKey } from "src/options/habr_careerSettings";
+import { defaultGithubSettings, githubSettingsKey } from "src/options/githubSettings";
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   if (reason === chrome.runtime.OnInstalledReason.INSTALL) {
     await chrome.storage.local.set({
       extensionEnabled: false,
       [likes_fmSettingsKey]: defaultLikesFmSettings,
-      [habr_careerSettingsKey]: defaulthabrCareerSettings
+      [habr_careerSettingsKey]: defaultHabrCareerSettings,
+      [githubSettingsKey]: defaultGithubSettings,
     });
 
     console.log("friendly2: Настройки успешно инициализированы при установке.");

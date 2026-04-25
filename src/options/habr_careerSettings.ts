@@ -1,12 +1,12 @@
-export type habrCareerSettings = Record<habrCareerOptions, boolean>;
+export type HabrCareerSettings = Record<HabrCareerOptions, boolean>;
 
-export enum habrCareerOptions
+export enum HabrCareerOptions
 {
   FRIENDS = "Friends"
 };
 
-export const defaulthabrCareerSettings: habrCareerSettings = {
-  [habrCareerOptions.FRIENDS]: true,
+export const defaultHabrCareerSettings: HabrCareerSettings = {
+  [HabrCareerOptions.FRIENDS]: true,
 };
 
 export const habr_careerSettingsKey = "habr_career";

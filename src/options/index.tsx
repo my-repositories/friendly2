@@ -1,27 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { 
-  Repeat2, Heart, UserPlus, Users, MessageSquare, BarChart3, Settings2, UserCheck 
+  Repeat2, Heart, UserPlus, Users, MessageSquare, BarChart3, Settings2, Star, UserCheck 
 } from "lucide-react";
 import {
   defaultLikesFmSettings, likes_fmSettingsKey, LikesFmOptions, type LikesFmSettings
 } from "src/options/likes_fmSettings";
 import {
-  defaulthabrCareerSettings, habr_careerSettingsKey, habrCareerOptions, type habrCareerSettings
+  defaultHabrCareerSettings, habr_careerSettingsKey, HabrCareerOptions, type HabrCareerSettings
 } from "src/options/habr_careerSettings";
+import {
+  defaultGithubSettings, githubSettingsKey, GithubOptions, type GithubSettings
+} from "src/options/githubSettings";
 import { SUPPORTED_SERVICES } from "src/config";
 
 const OptionsPage = () => {
   const [likesFmSettings, updateLikesFmSettings] = useState<LikesFmSettings>(defaultLikesFmSettings);
-  const [habrSettings, updateHabrSettings] = useState<habrCareerSettings>(defaulthabrCareerSettings);
+  const [habrCareerSettings, updateHabrCareerSettings] = useState<HabrCareerSettings>(defaultHabrCareerSettings);
+  const [githubSettings, updateGithubSettings] = useState<GithubSettings>(defaultGithubSettings);
   const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
 
+  const likesFm = SUPPORTED_SERVICES.find(x => x.id === 'likesfm');
+  const habrCareer = SUPPORTED_SERVICES.find(x => x.id === 'habrcareer');
+  const github = SUPPORTED_SERVICES.find(x => x.id === 'github');
   const sections = [
     {
-      title: "Likes.FM",
+      title: likesFm?.name,
       key: likes_fmSettingsKey,
-      icon: SUPPORTED_SERVICES.find(x => x.id === 'likesfm')?.icon,
+      icon: likesFm?.icon,
       state: likesFmSettings,
       update: updateLikesFmSettings,
       options: [
@@ -34,13 +41,24 @@ const OptionsPage = () => {
       ]
     },
     {
-      title: "Habr Career",
+      title: habrCareer?.name,
       key: habr_careerSettingsKey,
-      icon: SUPPORTED_SERVICES.find(x => x.id === 'habrcareer')?.icon,
-      state: habrSettings,
-      update: updateHabrSettings,
+      icon: habrCareer?.icon,
+      state: habrCareerSettings,
+      update: updateHabrCareerSettings,
       options: [
-        { id: habrCareerOptions.FRIENDS, icon: <UserCheck size={18} className="text-orange-400" /> },
+        { id: HabrCareerOptions.FRIENDS, icon: <UserCheck size={18} className="text-orange-400" /> },
+      ]
+    },
+    {
+      title: github?.name,
+      key: githubSettingsKey,
+      icon: github?.icon,
+      state: githubSettings,
+      update: updateGithubSettings,
+      options: [
+        { id: GithubOptions.FOLLOWERS, icon: <Users size={18} className="text-green-400" /> },
+        { id: GithubOptions.STARS, icon: <Star size={18} className="text-yellow-400" /> },
       ]
     }
   ];
@@ -49,7 +67,8 @@ const OptionsPage = () => {
     const keys = [likes_fmSettingsKey, habr_careerSettingsKey];
     chrome.storage.local.get(keys, (result) => {
       if (result[likes_fmSettingsKey]) updateLikesFmSettings(result[likes_fmSettingsKey]);
-      if (result[habr_careerSettingsKey]) updateHabrSettings(result[habr_careerSettingsKey]);
+      if (result[habr_careerSettingsKey]) updateHabrCareerSettings(result[habr_careerSettingsKey]);
+      if (result[githubSettingsKey]) updateGithubSettings(result[githubSettingsKey]);
     });
 
     const frame = requestAnimationFrame(() => {
