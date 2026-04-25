@@ -3,24 +3,27 @@ import { createRoot } from "react-dom/client";
 import { 
   Repeat2, Heart, UserPlus, Users, MessageSquare, BarChart3, Settings2 
 } from "lucide-react";
+import {
+  defaultLikesFmSettings, likes_fmSettingsKey, LikesFmOptions, type LikesFmSettings
+} from "src/options/likes_fmSettings";
 
 const OptionsPage = () => {
-  const [enabledOptions, setEnabledOptions] = useState<string[]>([]);
+  const [likesFmSettings, updateLikesFmSettings] = useState<LikesFmSettings>(defaultLikesFmSettings);
   const [isVisible, setIsVisible] = useState(false);
 
   const options = [
-    { id: "reposts", label: "Reposts", icon: <Repeat2 size={18} className="text-blue-400" /> },
-    { id: "likes", label: "Likes", icon: <Heart size={18} className="text-pink-500" /> },
-    { id: "subscribers", label: "Subscribers", icon: <UserPlus size={18} className="text-purple-400" /> },
-    { id: "members", label: "Members", icon: <Users size={18} className="text-indigo-400" /> },
-    { id: "comments", label: "Comments", icon: <MessageSquare size={18} className="text-slate-400" /> },
-    { id: "votings", label: "Votings", icon: <BarChart3 size={18} className="text-emerald-400" /> },
+    { id: LikesFmOptions.REPOSTS, icon: <Repeat2 size={18} className="text-blue-400" /> },
+    { id: LikesFmOptions.LIKES, icon: <Heart size={18} className="text-pink-500" /> },
+    { id: LikesFmOptions.SUBSCRIBERS, icon: <UserPlus size={18} className="text-purple-400" /> },
+    { id: LikesFmOptions.MEMBERS, icon: <Users size={18} className="text-indigo-400" /> },
+    { id: LikesFmOptions.COMMENTS, icon: <MessageSquare size={18} className="text-slate-400" /> },
+    { id: LikesFmOptions.VOTINGS, icon: <BarChart3 size={18} className="text-emerald-400" /> },
   ];
 
   useEffect(() => {
-    chrome.storage.local.get(["likes_fm"], (result) => {
-      if (result.likes_fm) {
-        setEnabledOptions(result.likes_fm);
+    chrome.storage.local.get([likes_fmSettingsKey], (result) => {
+      if (result[likes_fmSettingsKey]) {
+        updateLikesFmSettings(result[likes_fmSettingsKey]);
       }
     });
 
@@ -31,14 +34,14 @@ const OptionsPage = () => {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  const toggleOption = (id: string) => {
-    const newSettings = enabledOptions.includes(id) 
-      ? enabledOptions.filter(item => item !== id) 
-      : [...enabledOptions, id];
-    
-    setEnabledOptions(newSettings);
-    
-    chrome.storage.local.set({ likes_fm: newSettings });
+  const toggleOption = (id: LikesFmOptions) => {
+    const newSettings = {
+      ...likesFmSettings,
+      [id]: !likesFmSettings[id]
+    };
+
+    updateLikesFmSettings(newSettings);
+    chrome.storage.local.set({ [likes_fmSettingsKey]: newSettings });
   };
 
   return (
@@ -64,7 +67,7 @@ const OptionsPage = () => {
           
           <div className="space-y-2.5">
             {options.map((opt, index) => {
-              const isActive = enabledOptions.includes(opt.id);
+              const isActive = likesFmSettings[opt.id];
               return (
                 <div 
                   key={opt.id}
@@ -78,7 +81,7 @@ const OptionsPage = () => {
                     <div className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-white/5' : 'bg-transparent'}`}>
                       {opt.icon}
                     </div>
-                    <span className="font-semibold text-slate-200 text-[15px]">{opt.label}</span>
+                    <span className="font-semibold text-slate-200 text-[15px]">{opt.id}</span>
                   </div>
                   
                   {/* Switch */}

@@ -1,36 +1,37 @@
+import {
+  defaultLikesFmSettings, likes_fmSettingsKey, LikesFmOptions, type LikesFmSettings
+} from "src/options/likes_fmSettings";
+
 class LikesFm
 {
+  private currentTask?: LikesFmOptions;
   private hasProcessingTask: boolean = false;
-  private userSettings: string[] = [];
+  private userSettings: LikesFmSettings = defaultLikesFmSettings;
 
   private getNextTask(): void {
   }
 
-  public async run(): Promise<void> {
-    const { likes_fm: userSettings } = await chrome.storage.local.get({ likes_fm: [] });
+  public async init(): Promise<LikesFm> {
+    const settings = await chrome.storage.local.get([likes_fmSettingsKey]);
     
-    if (!userSettings) return;
-
-    console.log("Активные модули friendly2:", userSettings);
-
-    if (userSettings.includes("likes")) {
-      console.log("Модуль Likes активирован");
-    }
-
-    if (userSettings.includes("comments")) {
-      console.log("Модуль Comments активирован");
-    }
+    this.userSettings = settings[likes_fmSettingsKey];
 
     chrome.storage.onChanged.addListener((changes, area) => {
       console.log({changes, area});
-      if (area === 'local' && changes.likes_fm) {
-        const newSettings = changes.likes_fm.newValue;
-        console.log("Настройки обновились на лету:", newSettings);
-        
-        // Здесь можно включить или выключить функции динамически
+      if (area === 'local' && changes[likes_fmSettingsKey]) {
+        this.userSettings = changes[likes_fmSettingsKey].newValue;
       }
     });
+
+    return this;
+  }
+
+  public async run(): Promise<void> {
+    
   }
 }
 
-new LikesFm().run();
+window.onload = async () => {
+  const app = await new LikesFm().init();
+  await app.run();
+};
