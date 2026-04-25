@@ -55,6 +55,7 @@ class LikesFm
 
       return new Promise((resolve) => {
         setTimeout(() => {
+          (document.querySelector('.popup_box_container .close') as HTMLElement)?.click();
           const freshBlock = document.querySelector(moduleSelector);
           const stillExists = freshBlock?.querySelector(`a.open_offer[href="${currentHref}"]`);
           
@@ -69,7 +70,7 @@ class LikesFm
           checkButton?.click();
 
           setTimeout(() => {
-            (document.querySelector('.popup_box_container.alert .close') as HTMLElement)?.click()
+            (document.querySelector('.popup_box_container .close') as HTMLElement)?.click();
             const freshBlock2 = document.querySelector(moduleSelector);
             const stillExists2 = freshBlock2?.querySelector(`a.open_offer[href="${currentHref}"]`);
             
