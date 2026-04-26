@@ -3,10 +3,7 @@ export default {
   darkMode: 'media', 
   content: [
     "./public/**/*.html",
-    "./src/popup/**/*.{ts,tsx}",
-    "./src/options/**/*.{ts,tsx}",
-    "./src/sites/**/*.{ts,tsx}",
-    "./src/background.ts",
+    "./src/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
