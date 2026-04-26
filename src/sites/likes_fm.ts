@@ -1,3 +1,4 @@
+import { appendHistoryEvent } from "src/history";
 import { LIKES_FM_TASKS } from "src/tasks";
 import { startSiteAutomation } from "src/sites/runner";
 import { getRandomDelay, humanClick, waitForElement } from "src/utils";
@@ -68,6 +69,13 @@ class LikesFm
 
     if (!taskLink) {
       console.log(`[friendly2] Очередь ${type} пуста.`);
+      await appendHistoryEvent({
+        serviceId: this.id,
+        moduleId: type,
+        status: "skipped",
+        timestamp: Date.now(),
+        details: "Очередь пуста",
+      });
       return "empty";
     }
 
@@ -78,6 +86,12 @@ class LikesFm
 
     if (!this.isTaskStillPresent(selector, taskHref)) {
       console.log(`[friendly2] Задача ${type} успешно выполнена.`);
+      await appendHistoryEvent({
+        serviceId: this.id,
+        moduleId: type,
+        status: "success",
+        timestamp: Date.now(),
+      });
       return "success";
     }
 
@@ -85,9 +99,23 @@ class LikesFm
 
     if (this.isTaskStillPresent(selector, taskHref)) {
       this.skipTask(selector);
+      await appendHistoryEvent({
+        serviceId: this.id,
+        moduleId: type,
+        status: "error",
+        timestamp: Date.now(),
+        details: "Задача застряла после проверки",
+      });
       return "retryable_fail";
     } else {
       console.log(`[friendly2] Задачу ${type} успешно протолкали.`);
+      await appendHistoryEvent({
+        serviceId: this.id,
+        moduleId: type,
+        status: "success",
+        timestamp: Date.now(),
+        details: "Успешно после повторной проверки",
+      });
       return "success";
     }
   }
@@ -145,6 +173,13 @@ class LikesFm
       this.lastTaskResult = await this.processTask(this.currentTask);
     } catch (error) {
       console.error("Ошибка при выполнении шага:", error);
+      await appendHistoryEvent({
+        serviceId: this.id,
+        moduleId: this.currentTask,
+        status: "error",
+        timestamp: Date.now(),
+        details: String(error),
+      });
       this.lastTaskResult = "retryable_fail";
     } finally {
       this.hasProcessingTask = false;

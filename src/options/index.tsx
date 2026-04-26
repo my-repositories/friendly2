@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { SUPPORTED_SERVICES } from "src/config";
+import { AUTOMATION_HISTORY_KEY, clearAutomationHistory, type AutomationEvent } from "src/history";
 import { OptionsFooter } from "src/options/OptionsFooter";
 import { OptionsHeader } from "src/options/OptionsHeader";
+import { OptionsHistoryPanel } from "src/options/OptionsHistoryPanel";
 import { OptionsModulesList } from "src/options/OptionsModulesList";
 import { OptionsTabs } from "src/options/OptionsTabs";
 import type { ServiceSettings } from "src/types/services";
@@ -12,6 +14,7 @@ const SAVE_DEBOUNCE_MS = 2500;
 
 const OptionsPage = () => {
   const [allSettings, setAllSettings] = useState<AllSettings>({});
+  const [historyEvents, setHistoryEvents] = useState<AutomationEvent[]>([]);
   const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const saveTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -19,13 +22,27 @@ const OptionsPage = () => {
   useEffect(() => {
     const keys = SUPPORTED_SERVICES.map(s => s.id);
     chrome.storage.local.get(keys, (res) => setAllSettings(res as AllSettings));
+    chrome.storage.local.get([AUTOMATION_HISTORY_KEY], (res) => {
+      setHistoryEvents(((res[AUTOMATION_HISTORY_KEY] ?? []) as AutomationEvent[]).slice().reverse());
+    });
 
     const frame = requestAnimationFrame(() => {
       const timer = setTimeout(() => setIsVisible(true), 50);
       return () => clearTimeout(timer);
     });
+
+    const onStorageChanged: Parameters<typeof chrome.storage.onChanged.addListener>[0] = (changes, areaName) => {
+      if (areaName !== "local" || !changes[AUTOMATION_HISTORY_KEY]) {
+        return;
+      }
+      const next = (changes[AUTOMATION_HISTORY_KEY].newValue ?? []) as AutomationEvent[];
+      setHistoryEvents(next.slice().reverse());
+    };
+    chrome.storage.onChanged.addListener(onStorageChanged);
+
     return () => {
       cancelAnimationFrame(frame);
+      chrome.storage.onChanged.removeListener(onStorageChanged);
       for (const timer of Object.values(saveTimersRef.current)) {
         clearTimeout(timer);
       }
@@ -56,6 +73,11 @@ const OptionsPage = () => {
   }, []);
 
   const currentService = useMemo(() => SUPPORTED_SERVICES[activeTab], [activeTab]);
+  const isHistoryTab = activeTab === SUPPORTED_SERVICES.length;
+  const handleClearHistory = useCallback(async () => {
+    await clearAutomationHistory();
+    setHistoryEvents([]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0f111a] flex items-center justify-center p-6 font-sans">
@@ -65,12 +87,16 @@ const OptionsPage = () => {
         <OptionsHeader />
 
         <div className="px-6 py-8 -mt-10 bg-[#1a1d29] rounded-t-[40px] relative">
-          <OptionsTabs activeTab={activeTab} onSelectTab={setActiveTab} />
-          <OptionsModulesList
-            currentService={currentService}
-            allSettings={allSettings}
-            onToggleOption={toggleOption}
-          />
+          <OptionsTabs activeTab={activeTab} onSelectTab={setActiveTab} historyCount={historyEvents.length} />
+          {isHistoryTab ? (
+            <OptionsHistoryPanel events={historyEvents} onClear={handleClearHistory} />
+          ) : (
+            <OptionsModulesList
+              currentService={currentService}
+              allSettings={allSettings}
+              onToggleOption={toggleOption}
+            />
+          )}
           <OptionsFooter />
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { appendHistoryEvent } from "src/history";
 import { LIKES_FM_TASKS } from "src/tasks";
 import { startSiteAutomation } from "src/sites/runner";
 import { getRandomDelay, humanClick } from "src/utils";
@@ -80,12 +81,32 @@ async function run() {
   
   try {
     if (!task) {
+      await appendHistoryEvent({
+        serviceId: "likesfm",
+        moduleId: vk_currentAutomation.type,
+        status: "skipped",
+        timestamp: Date.now(),
+        details: "Не найден обработчик задачи",
+      });
       return;
     }
     await task();
+    await appendHistoryEvent({
+      serviceId: "likesfm",
+      moduleId: vk_currentAutomation.type,
+      status: "success",
+      timestamp: Date.now(),
+    });
   } catch (e) {
     console.error(e);
     alert(e);
+    await appendHistoryEvent({
+      serviceId: "likesfm",
+      moduleId: vk_currentAutomation.type,
+      status: "error",
+      timestamp: Date.now(),
+      details: String(e),
+    });
   } finally {
     await chrome.storage.session.remove("vk_currentAutomation");
     setTimeout(() => {
