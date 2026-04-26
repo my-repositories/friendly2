@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "friendly2",
   "short_name": "friendly2",
-  "version": "2.1.0",
+  "version": "2.1.2",
   "description": "Google Chrome extension which automates sending requests to friends/subscribers.",
   "author": "Aleksandr Loktionov <loktionov129@gmail.com>",
   "homepage_url": "https://github.com/my-repositories/friendly2",

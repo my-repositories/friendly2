@@ -1,5 +1,6 @@
 {
   "name": "friendly2",
+  "version": "2.1.2",
   "module": "index.ts",
   "scripts": {
     "build": "bun run config/build.ts",

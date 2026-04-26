@@ -8,7 +8,7 @@ export function AppFooter() {
           made with <Heart size={10} className="text-rose-500 fill-rose-500 animate-pulse" /> for friendly2
         </div>
         <span className="text-[8px] text-slate-700 font-black uppercase tracking-widest">
-          v2.1.0 • stable
+          v2.1.2 • stable
         </span>
       </div>
   );
