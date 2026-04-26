@@ -97,7 +97,7 @@ const OptionsPage = () => {
           </div>
         </div>
 
-        <div className="bg-[#1a1d29] rounded-[28px] shadow-2xl border border-white/5 p-4">
+        <div className="bg-[#1a1d29] rounded-[28px] shadow-2xl border border-white/5 p-4 lg:max-h-[760px] min-h-[350px]">
           <OptionsHistoryPanel events={historyEvents} onClear={handleClearHistory} />
         </div>
       </div>
