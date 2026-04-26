@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { SUPPORTED_SERVICES } from "src/config";
 import type { ServiceSettings } from "src/types/services";
@@ -21,7 +21,7 @@ const OptionsPage = () => {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  const toggleOption = (serviceId: string, moduleId: string) => {
+  const toggleOption = useCallback((serviceId: string, moduleId: string) => {
     setAllSettings((prev) => {
       const currentServiceSettings = prev[serviceId] ?? {};
       const newSettings: ServiceSettings = {
@@ -31,9 +31,9 @@ const OptionsPage = () => {
       chrome.storage.local.set({ [serviceId]: newSettings });
       return { ...prev, [serviceId]: newSettings };
     });
-  };
+  }, []);
 
-  const currentService = SUPPORTED_SERVICES[activeTab];
+  const currentService = useMemo(() => SUPPORTED_SERVICES[activeTab], [activeTab]);
 
   return (
     <div className="min-h-screen bg-[#0f111a] flex items-center justify-center p-6 font-sans">

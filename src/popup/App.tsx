@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AppFooter } from "src/popup/AppFooter";
 import { AppHeader } from "src/popup/AppHeader";
 import { AppSiteItem } from "src/popup/AppSiteItem";
@@ -7,6 +7,7 @@ import { SUPPORTED_SERVICES } from "src/config";
 export function App() {
   const [isActive, setIsActive] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const allPatterns = useMemo(() => SUPPORTED_SERVICES.map((service) => service.pattern), []);
 
   useEffect(() => {
     chrome.storage.local.get(["extensionEnabled"], (res) => {
@@ -22,17 +23,16 @@ export function App() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  const toggleExtension = async () => {
+  const toggleExtension = useCallback(async () => {
     const newState = !isActive;
     setIsActive(newState);
     await chrome.storage.local.set({ extensionEnabled: newState });
 
-    const allPatterns = SUPPORTED_SERVICES.map(s => s.pattern);
     const tabs = await chrome.tabs.query({ url: allPatterns });
-    tabs.forEach(tab => tab.id && chrome.tabs.reload(tab.id));
-  };
+    tabs.forEach((tab) => tab.id && chrome.tabs.reload(tab.id));
+  }, [allPatterns, isActive]);
 
-  const handleNavigate = (url: string, searchPattern: string) => {
+  const handleNavigate = useCallback((url: string, searchPattern: string) => {
     chrome.tabs.query({ url: searchPattern }, (tabs) => {
       if (tabs.length > 0) {
         chrome.tabs.update(tabs[0].id!, { active: true });
@@ -42,15 +42,15 @@ export function App() {
       }
       window.close();
     });
-  };
+  }, []);
 
-  const openOptions = () => {
+  const openOptions = useCallback(() => {
     if (chrome.runtime.openOptionsPage) {
       chrome.runtime.openOptionsPage();
     } else {
       window.open(chrome.runtime.getURL('options.html'));
     }
-  };
+  }, []);
 
   return (
     <div className="w-72 bg-[#0f111a] text-slate-200 overflow-hidden font-sans border border-white/5 shadow-2xl transition-opacity duration-500">
