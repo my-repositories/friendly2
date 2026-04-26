@@ -132,9 +132,11 @@ function urlsLikelyMatch(taskUrl: string, vkUrl: string): boolean {
   try {
     const taskParsed = new URL(taskUrl);
     const vkParsed = new URL(vkUrl);
+    const sameHost = taskParsed.hostname === vkParsed.hostname;
+    const samePath = taskParsed.pathname === vkParsed.pathname;
     return (
-      taskParsed.origin === vkParsed.origin &&
-      taskParsed.pathname === vkParsed.pathname
+      sameHost &&
+      samePath
     );
   } catch {
     return taskUrl === vkUrl;
@@ -142,15 +144,19 @@ function urlsLikelyMatch(taskUrl: string, vkUrl: string): boolean {
 }
 
 function findPendingTaskForVkUrl(vkUrl: string): BridgeTask | undefined {
+  let firstPendingTask: BridgeTask | undefined;
   for (const task of tasksById.values()) {
     if (task.status !== "pending" || task.vkTabId) {
       continue;
+    }
+    if (!firstPendingTask) {
+      firstPendingTask = task;
     }
     if (!task.taskUrl || urlsLikelyMatch(task.taskUrl, vkUrl)) {
       return task;
     }
   }
-  return undefined;
+  return firstPendingTask;
 }
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {

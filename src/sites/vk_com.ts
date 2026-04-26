@@ -119,15 +119,18 @@ async function executeTask(taskMessage: VkDispatchMessage): Promise<void> {
   const tasks = getTasks();
   const task = tasks[taskMessage.taskType as LIKES_FM_TASKS];
   let resultStatus: AutomationStatus = "success";
+  let resultEventType: AutomationEventType = "info";
   let resultDetails = "vkcom apply action";
   
   try {
     if (!task) {
       resultStatus = "skipped";
+      resultEventType = "warn";
       resultDetails = "vkcom task handler is missing - skipping";
     } else {
       const result = await task();
       resultStatus = result?.status ?? "success";
+      resultEventType = result?.eventType ?? (resultStatus === "error" ? "error" : resultStatus === "skipped" ? "warn" : "info");
       resultDetails = result?.details ?? "vkcom apply action";
     }
 
@@ -135,7 +138,7 @@ async function executeTask(taskMessage: VkDispatchMessage): Promise<void> {
       serviceId: "likesfm",
       moduleId: taskMessage.taskType,
       status: resultStatus,
-      eventType: resultStatus === "error" ? "error" : "info",
+      eventType: resultEventType,
       timestamp: Date.now(),
       details: resultDetails,
       url: taskMessage.taskUrl ?? window.location.href,

@@ -1,7 +1,7 @@
 import React from "react";
 import type { AutomationEvent } from "src/history";
 import { eventTypeBadgeClass, statusBadgeClass } from "src/options/history/styles";
-import { getEventType } from "src/options/history/types";
+import { getEventStatus, getEventType } from "src/options/history/types";
 
 type HistoryEventItemProps = {
   event: AutomationEvent;
@@ -9,6 +9,7 @@ type HistoryEventItemProps = {
 
 export function HistoryEventItem({ event }: HistoryEventItemProps) {
   const eventType = getEventType(event);
+  const status = getEventStatus(event);
 
   return (
     <div className="p-3 rounded-2xl bg-[#1e2230] border border-white/5">
@@ -18,8 +19,8 @@ export function HistoryEventItem({ event }: HistoryEventItemProps) {
           <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${eventTypeBadgeClass(eventType)}`}>
             {eventType}
           </span>
-          <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${statusBadgeClass(event.status)}`}>
-            {event.status}
+          <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${statusBadgeClass(status)}`}>
+            {status}
           </span>
         </div>
       </div>

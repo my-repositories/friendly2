@@ -1,4 +1,4 @@
-import type { AutomationEvent, AutomationEventType } from "src/history";
+import type { AutomationEvent, AutomationEventType, AutomationStatus } from "src/history";
 
 export type EventTypeFilterState = Record<AutomationEventType, boolean>;
 
@@ -12,7 +12,7 @@ export const DEFAULT_EVENT_FILTERS: EventTypeFilterState = {
 };
 
 export function getEventType(event: AutomationEvent): AutomationEventType {
-  if (event.eventType) {
+  if (event.eventType === "info" || event.eventType === "warn" || event.eventType === "error" || event.eventType === "critical") {
     return event.eventType;
   }
   if (event.status === "error") {
@@ -22,4 +22,18 @@ export function getEventType(event: AutomationEvent): AutomationEventType {
     return "warn";
   }
   return "info";
+}
+
+export function getEventStatus(event: AutomationEvent): AutomationStatus {
+  if (event.status === "success" || event.status === "skipped" || event.status === "error") {
+    return event.status;
+  }
+  const eventType = getEventType(event);
+  if (eventType === "error" || eventType === "critical") {
+    return "error";
+  }
+  if (eventType === "warn") {
+    return "skipped";
+  }
+  return "success";
 }

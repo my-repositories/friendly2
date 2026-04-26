@@ -14,12 +14,34 @@ export type AutomationEvent = {
 export const AUTOMATION_HISTORY_KEY = "automation_history";
 const MAX_EVENTS = 200;
 
+function normalizeStatus(status: unknown): AutomationStatus {
+  if (status === "success" || status === "skipped" || status === "error") {
+    return status;
+  }
+  return "success";
+}
+
+function normalizeEventType(eventType: unknown, status: AutomationStatus): AutomationEventType {
+  if (eventType === "info" || eventType === "warn" || eventType === "error" || eventType === "critical") {
+    return eventType;
+  }
+  if (status === "error") {
+    return "error";
+  }
+  if (status === "skipped") {
+    return "warn";
+  }
+  return "info";
+}
+
 export async function appendHistoryEvent(event: AutomationEvent): Promise<void> {
   const storage = await chrome.storage.local.get([AUTOMATION_HISTORY_KEY]);
   const events = (storage[AUTOMATION_HISTORY_KEY] ?? []) as AutomationEvent[];
+  const status = normalizeStatus(event.status);
   const normalizedEvent: AutomationEvent = {
     ...event,
-    eventType: event.eventType ?? (event.status === "error" ? "error" : event.status === "skipped" ? "warn" : "info"),
+    status,
+    eventType: normalizeEventType(event.eventType, status),
   };
   const nextEvents = [...events, normalizedEvent].slice(-MAX_EVENTS);
   await chrome.storage.local.set({ [AUTOMATION_HISTORY_KEY]: nextEvents });
