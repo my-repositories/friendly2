@@ -1,4 +1,4 @@
-import Bun, { $ } from 'bun';
+import { $ } from 'bun';
 import AdmZip from 'adm-zip';
 import manifest from '../public/manifest.json';
 

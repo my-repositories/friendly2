@@ -23,9 +23,9 @@ jobs:
         run: |
           bun install
 
-      - name: Test project
+      - name: Lint project
         run: |
-          echo yarn test
+          bun run lint
 
       - name: Build project
         run: |

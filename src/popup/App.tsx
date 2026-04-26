@@ -4,6 +4,7 @@ import { AppHeader } from "src/popup/AppHeader";
 import { AppSiteItem } from "src/popup/AppSiteItem";
 import { SUPPORTED_SERVICES } from "src/config";
 import { waitFor } from "src/utils";
+import { appendHistoryEvent } from "src/history";
 
 export function App() {
   const [isActive, setIsActive] = useState(false);
@@ -49,6 +50,14 @@ export function App() {
     const newState = !isActive;
     setIsActive(newState);
     await chrome.storage.local.set({ extensionEnabled: newState });
+
+    await appendHistoryEvent({
+      serviceId: "system",
+      moduleId: "options",
+      status: newState ? "success" : "error",
+      timestamp: Date.now(),
+      details: `extension_toggle: ${newState ? "enabled" : "disabled"}`,
+    });
 
     const tabs = await chrome.tabs.query({ url: allPatterns });
     tabs.forEach((tab) => tab.id && chrome.tabs.reload(tab.id));
