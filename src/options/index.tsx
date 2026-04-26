@@ -1,14 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { SUPPORTED_SERVICES } from "src/config";
 import type { ServiceSettings } from "src/types/services";
 
 type AllSettings = Record<string, ServiceSettings>;
+const SAVE_DEBOUNCE_MS = 2500;
 
 const OptionsPage = () => {
   const [allSettings, setAllSettings] = useState<AllSettings>({});
   const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const saveTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     const keys = SUPPORTED_SERVICES.map(s => s.id);
@@ -18,7 +20,13 @@ const OptionsPage = () => {
       const timer = setTimeout(() => setIsVisible(true), 50);
       return () => clearTimeout(timer);
     });
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(frame);
+      for (const timer of Object.values(saveTimersRef.current)) {
+        clearTimeout(timer);
+      }
+      saveTimersRef.current = {};
+    };
   }, []);
 
   const toggleOption = useCallback((serviceId: string, moduleId: string) => {
@@ -28,7 +36,17 @@ const OptionsPage = () => {
         ...currentServiceSettings,
         [moduleId]: !currentServiceSettings[moduleId],
       };
-      chrome.storage.local.set({ [serviceId]: newSettings });
+
+      const existingTimer = saveTimersRef.current[serviceId];
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+
+      saveTimersRef.current[serviceId] = setTimeout(() => {
+        chrome.storage.local.set({ [serviceId]: newSettings });
+        delete saveTimersRef.current[serviceId];
+      }, SAVE_DEBOUNCE_MS);
+
       return { ...prev, [serviceId]: newSettings };
     });
   }, []);
@@ -80,7 +98,6 @@ const OptionsPage = () => {
           <div className="space-y-3">
             {currentService.modules.map((mod) => {
               const isActive = allSettings[currentService.id]?.[mod.id];
-
               return (
                 <div key={mod.id} onClick={() => toggleOption(currentService.id, mod.id)} className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-[#242938] border-indigo-500/20' : 'bg-[#1e2230] border-transparent'}`}>
                   <div className="flex items-center gap-4" title={mod.title}>
