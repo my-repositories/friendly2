@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { SUPPORTED_SERVICES } from "src/config";
+import type { ServiceSettings } from "src/types/services";
+
+type AllSettings = Record<string, ServiceSettings>;
 
 const OptionsPage = () => {
-  const [allSettings, setAllSettings] = useState<Record<string, any>>({});
+  const [allSettings, setAllSettings] = useState<AllSettings>({});
   const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     const keys = SUPPORTED_SERVICES.map(s => s.id);
-    chrome.storage.local.get(keys, (res) => setAllSettings(res));
+    chrome.storage.local.get(keys, (res) => setAllSettings(res as AllSettings));
 
     const frame = requestAnimationFrame(() => {
       const timer = setTimeout(() => setIsVisible(true), 50);
@@ -19,9 +22,15 @@ const OptionsPage = () => {
   }, []);
 
   const toggleOption = (serviceId: string, moduleId: string) => {
-    const newSettings = { ...allSettings[serviceId], [moduleId]: !allSettings[serviceId]?.[moduleId] };
-    setAllSettings({ ...allSettings, [serviceId]: newSettings });
-    chrome.storage.local.set({ [serviceId]: newSettings });
+    setAllSettings((prev) => {
+      const currentServiceSettings = prev[serviceId] ?? {};
+      const newSettings: ServiceSettings = {
+        ...currentServiceSettings,
+        [moduleId]: !currentServiceSettings[moduleId],
+      };
+      chrome.storage.local.set({ [serviceId]: newSettings });
+      return { ...prev, [serviceId]: newSettings };
+    });
   };
 
   const currentService = SUPPORTED_SERVICES[activeTab];
@@ -71,7 +80,7 @@ const OptionsPage = () => {
           <div className="space-y-3">
             {currentService.modules.map((mod) => {
               const isActive = allSettings[currentService.id]?.[mod.id];
-              console.log({mod});
+
               return (
                 <div key={mod.id} onClick={() => toggleOption(currentService.id, mod.id)} className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-[#242938] border-indigo-500/20' : 'bg-[#1e2230] border-transparent'}`}>
                   <div className="flex items-center gap-4" title={mod.title}>

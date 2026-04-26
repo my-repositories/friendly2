@@ -1,4 +1,5 @@
 import { LIKES_FM_TASKS } from "src/tasks";
+import type { ServiceConfig } from "src/types/services";
 
 export const SERVICES = [
   {
@@ -37,4 +38,4 @@ export const SERVICES = [
       { id: LIKES_FM_TASKS.POLL, name: "Votings", title: "Автоматические опросы", default: false, },
     ],
   },
-];
+] as const satisfies readonly ServiceConfig[];

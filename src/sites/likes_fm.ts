@@ -2,6 +2,32 @@ import { LIKES_FM_TASKS } from "src/tasks";
 import { getRandomDelay, humanClick } from "src/utils";
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+type LikesFmSettings = Record<LIKES_FM_TASKS, boolean>;
+
+const EMPTY_LIKES_FM_SETTINGS: LikesFmSettings = {
+  [LIKES_FM_TASKS.REPOST]: false,
+  [LIKES_FM_TASKS.LIKE]: false,
+  [LIKES_FM_TASKS.SUB]: false,
+  [LIKES_FM_TASKS.GROUP]: false,
+  [LIKES_FM_TASKS.COMMENT]: false,
+  [LIKES_FM_TASKS.POLL]: false,
+};
+
+function toLikesFmSettings(input: unknown): LikesFmSettings {
+  const source = (typeof input === "object" && input !== null
+    ? (input as Record<string, unknown>)
+    : {}) as Record<string, unknown>;
+
+  return {
+    [LIKES_FM_TASKS.REPOST]: Boolean(source[LIKES_FM_TASKS.REPOST] ?? EMPTY_LIKES_FM_SETTINGS.repost),
+    [LIKES_FM_TASKS.LIKE]: Boolean(source[LIKES_FM_TASKS.LIKE] ?? EMPTY_LIKES_FM_SETTINGS.like),
+    [LIKES_FM_TASKS.SUB]: Boolean(source[LIKES_FM_TASKS.SUB] ?? EMPTY_LIKES_FM_SETTINGS.sub),
+    [LIKES_FM_TASKS.GROUP]: Boolean(source[LIKES_FM_TASKS.GROUP] ?? EMPTY_LIKES_FM_SETTINGS.group),
+    [LIKES_FM_TASKS.COMMENT]: Boolean(source[LIKES_FM_TASKS.COMMENT] ?? EMPTY_LIKES_FM_SETTINGS.comment),
+    [LIKES_FM_TASKS.POLL]: Boolean(source[LIKES_FM_TASKS.POLL] ?? EMPTY_LIKES_FM_SETTINGS.poll),
+  };
+}
+
 class LikesFm
 {
   private id = "likesfm";
@@ -15,7 +41,7 @@ class LikesFm
   ];
   private currentTask: LIKES_FM_TASKS = LIKES_FM_TASKS.POLL;
   private hasProcessingTask: boolean = false;
-  private userSettings: any;
+  private userSettings: LikesFmSettings = EMPTY_LIKES_FM_SETTINGS;
 
   private getNextTask(): LIKES_FM_TASKS {
     let currentIndex = this.taskOrder.indexOf(this.currentTask);
@@ -91,11 +117,11 @@ class LikesFm
 
   public async init(): Promise<LikesFm> {
     const settings = await chrome.storage.local.get([this.id]);
-    this.userSettings = settings[this.id];
+    this.userSettings = toLikesFmSettings(settings[this.id]);
 
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === 'local' && changes[this.id]) {
-        this.userSettings = changes[this.id].newValue;
+        this.userSettings = toLikesFmSettings(changes[this.id].newValue);
       }
     });
 

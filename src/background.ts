@@ -1,23 +1,19 @@
-import { SERVICES } from "src/config.data";
+import { createDefaultSettings } from "src/settings";
 
 chrome.storage.session.setAccessLevel({ 
   accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' 
 });
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
-  if (reason === chrome.runtime.OnInstalledReason.INSTALL) {
-    const data: any = { extensionEnabled: true };
-    SERVICES.forEach(s => {
-      data[s.id] = s.modules.reduce((acc, mod) => ({ ...acc, [mod.id]: mod.default }), {});
-    });
-    await chrome.storage.local.set(data);
+  if (reason !== chrome.runtime.OnInstalledReason.INSTALL) return;
 
-    console.log("friendly2: Настройки успешно инициализированы при установке.");
+  await chrome.storage.local.set(createDefaultSettings());
 
-    chrome.tabs.create({
-      url: 'options/index.html',
-    });
-  }
+  console.log("friendly2: Настройки успешно инициализированы при установке.");
+
+  chrome.tabs.create({
+    url: 'options/index.html',
+  });
 });
 
 chrome.runtime.onMessage.addListener((message, sender) => {
