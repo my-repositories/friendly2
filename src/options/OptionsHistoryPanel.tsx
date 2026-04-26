@@ -42,6 +42,17 @@ export function OptionsHistoryPanel({ events, onClear }: OptionsHistoryPanelProp
               <div className="text-[11px] text-slate-400">
                 {new Date(event.timestamp).toLocaleString()}
               </div>
+              {event.url ? (
+                <a
+                  href={event.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block text-[11px] text-indigo-300/90 hover:text-indigo-200 truncate mt-1"
+                  title={event.url}
+                >
+                  {event.url}
+                </a>
+              ) : null}
               {event.details ? (
                 <div className="text-[11px] text-slate-500 mt-1 break-words">{event.details}</div>
               ) : null}

@@ -73,7 +73,6 @@ const OptionsPage = () => {
   }, []);
 
   const currentService = useMemo(() => SUPPORTED_SERVICES[activeTab], [activeTab]);
-  const isHistoryTab = activeTab === SUPPORTED_SERVICES.length;
   const handleClearHistory = useCallback(async () => {
     await clearAutomationHistory();
     setHistoryEvents([]);
@@ -81,23 +80,25 @@ const OptionsPage = () => {
 
   return (
     <div className="min-h-screen bg-[#0f111a] flex items-center justify-center p-6 font-sans">
-      <div className={`w-[420px] bg-[#1a1d29] rounded-[40px] shadow-2xl border border-white/5 overflow-hidden transition-all duration-700 ease-out transform ${
+      <div className={`w-full max-w-[1100px] grid grid-cols-1 lg:grid-cols-[460px_1fr] gap-6 transition-all duration-700 ease-out transform ${
         isVisible ? "translate-y-0 opacity-100 scale-100" : "translate-y-10 opacity-0 scale-95"
       }`}>
-        <OptionsHeader />
+        <div className="bg-[#1a1d29] rounded-[40px] shadow-2xl border border-white/5 overflow-hidden">
+          <OptionsHeader />
 
-        <div className="px-6 py-8 -mt-10 bg-[#1a1d29] rounded-t-[40px] relative">
-          <OptionsTabs activeTab={activeTab} onSelectTab={setActiveTab} historyCount={historyEvents.length} />
-          {isHistoryTab ? (
-            <OptionsHistoryPanel events={historyEvents} onClear={handleClearHistory} />
-          ) : (
+          <div className="px-6 py-8 -mt-10 bg-[#1a1d29] rounded-t-[40px] relative">
+            <OptionsTabs activeTab={activeTab} onSelectTab={setActiveTab} />
             <OptionsModulesList
               currentService={currentService}
               allSettings={allSettings}
               onToggleOption={toggleOption}
             />
-          )}
-          <OptionsFooter />
+            <OptionsFooter />
+          </div>
+        </div>
+
+        <div className="bg-[#1a1d29] rounded-[28px] shadow-2xl border border-white/5 p-4">
+          <OptionsHistoryPanel events={historyEvents} onClear={handleClearHistory} />
         </div>
       </div>
     </div>

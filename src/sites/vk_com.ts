@@ -87,6 +87,7 @@ async function run() {
         status: "skipped",
         timestamp: Date.now(),
         details: "Не найден обработчик задачи",
+        url: vk_currentAutomation.url ?? window.location.href,
       });
       return;
     }
@@ -96,9 +97,9 @@ async function run() {
       moduleId: vk_currentAutomation.type,
       status: "success",
       timestamp: Date.now(),
+      url: vk_currentAutomation.url ?? window.location.href,
     });
   } catch (e) {
-    console.error(e);
     alert(e);
     await appendHistoryEvent({
       serviceId: "likesfm",
@@ -106,6 +107,7 @@ async function run() {
       status: "error",
       timestamp: Date.now(),
       details: String(e),
+      url: vk_currentAutomation.url ?? window.location.href,
     });
   } finally {
     await chrome.storage.session.remove("vk_currentAutomation");

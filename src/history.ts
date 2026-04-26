@@ -6,6 +6,7 @@ export type AutomationEvent = {
   status: AutomationStatus;
   timestamp: number;
   details?: string;
+  url?: string;
 };
 
 export const AUTOMATION_HISTORY_KEY = "automation_history";

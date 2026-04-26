@@ -107,13 +107,13 @@ class LikesFm
     const taskLink = moduleElement?.querySelector("a.open_offer") as HTMLAnchorElement | null;
 
     if (!taskLink) {
-      console.log(`[friendly2] Очередь ${type} пуста.`);
       await appendHistoryEvent({
         serviceId: this.id,
         moduleId: type,
         status: "skipped",
         timestamp: Date.now(),
         details: "Очередь пуста",
+        url: window.location.href,
       });
       return "empty";
     }
@@ -124,12 +124,12 @@ class LikesFm
     this.closePopup();
 
     if (!this.isTaskStillPresent(selector, taskHref)) {
-      console.log(`[friendly2] Задача ${type} успешно выполнена.`);
       await appendHistoryEvent({
         serviceId: this.id,
         moduleId: type,
         status: "success",
         timestamp: Date.now(),
+        url: taskHref,
       });
       return "success";
     }
@@ -144,23 +144,23 @@ class LikesFm
         status: "error",
         timestamp: Date.now(),
         details: "Задача застряла после проверки",
+        url: taskHref,
       });
       return "retryable_fail";
     } else {
-      console.log(`[friendly2] Задачу ${type} успешно протолкали.`);
       await appendHistoryEvent({
         serviceId: this.id,
         moduleId: type,
         status: "success",
         timestamp: Date.now(),
         details: "Успешно после повторной проверки",
+        url: taskHref,
       });
       return "success";
     }
   }
 
   private async startTask(type: LIKES_FM_TASKS, link: HTMLAnchorElement): Promise<void> {
-    console.log(`[friendly2] Кликаю по задаче ${type}: ${link.href}`);
     await chrome.storage.session.set({
       vk_currentAutomation: { type, url: link.href }
     });
@@ -168,14 +168,12 @@ class LikesFm
   }
 
   private async verifyTask(selector: string): Promise<void> {
-    console.log(`[friendly2] Задача не исчезла, запускаю проверку.`);
     (document.querySelector(`${selector} span.do_offer`) as HTMLElement)?.click();
     await delay(getRandomDelay(2000, 4000));
     this.closePopup();
   }
 
   private skipTask(selector: string): void {
-    console.log(`[friendly2] Задача застряла, нажимаю крестик.`);
     (document.querySelector(`${selector} div.x_button`) as HTMLElement)?.click();
   }
 
@@ -238,13 +236,13 @@ class LikesFm
         this.safetyState.pausedUntil = Date.now() + this.safetyPolicy.pauseDurationMs;
       }
     } catch (error) {
-      console.error("Ошибка при выполнении шага:", error);
       await appendHistoryEvent({
         serviceId: this.id,
         moduleId: this.currentTask,
         status: "error",
         timestamp: Date.now(),
         details: String(error),
+        url: window.location.href,
       });
       this.safetyState.consecutiveErrors += 1;
       if (this.safetyState.consecutiveErrors >= this.safetyPolicy.pauseAfterConsecutiveErrors) {

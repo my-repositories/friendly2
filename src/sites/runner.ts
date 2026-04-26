@@ -1,4 +1,5 @@
 import type { ServiceSettings } from "src/types/services";
+import { appendHistoryEvent } from "src/history";
 
 type SiteAutomationAdapter = {
   serviceId: string;
@@ -17,6 +18,13 @@ export async function startSiteAutomation(adapter: SiteAutomationAdapter): Promi
     const settings = (storageState[adapter.serviceId] ?? {}) as ServiceSettings;
     await adapter.run(settings);
   } catch (error) {
-    console.error(`[friendly2:${adapter.serviceId}] Ошибка выполнения автоматизации:`, error);
+    await appendHistoryEvent({
+      serviceId: adapter.serviceId,
+      moduleId: "runner",
+      status: "error",
+      timestamp: Date.now(),
+      details: String(error),
+      url: window.location.href,
+    });
   }
 }

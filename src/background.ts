@@ -1,4 +1,5 @@
 import { createDefaultSettings } from "src/settings";
+import { appendHistoryEvent } from "src/history";
 
 chrome.storage.session.setAccessLevel({ 
   accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' 
@@ -9,7 +10,13 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
 
   await chrome.storage.local.set(createDefaultSettings());
 
-  console.log("friendly2: Настройки успешно инициализированы при установке.");
+  await appendHistoryEvent({
+    serviceId: "system",
+    moduleId: "install",
+    status: "success",
+    timestamp: Date.now(),
+    details: "Настройки успешно инициализированы при установке",
+  });
 
   chrome.tabs.create({
     url: 'options/index.html',
