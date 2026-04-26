@@ -1,4 +1,5 @@
 import { LIKES_FM_TASKS } from "src/tasks";
+import { startSiteAutomation } from "src/sites/runner";
 import { getRandomDelay, humanClick } from "src/utils";
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -146,14 +147,11 @@ class LikesFm
   }
 }
 
-window.onload = async () => {
-  const { extensionEnabled } = await chrome.storage.local.get(["extensionEnabled"]);
-  
-  if (!extensionEnabled) {
-    console.log("friendly2: расширение отключено пользователем.");
-    return;
-  }
-
-  const app = await new LikesFm().init();
-  await app.run();
-};
+window.onload = () =>
+  startSiteAutomation({
+    serviceId: "likesfm",
+    run: async () => {
+      const app = await new LikesFm().init();
+      await app.run();
+    },
+  });

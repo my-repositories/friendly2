@@ -1,4 +1,5 @@
 import { LIKES_FM_TASKS } from "src/tasks";
+import { startSiteAutomation } from "src/sites/runner";
 import { humanClick } from "src/utils";
 
 function getTasks() {
@@ -66,10 +67,9 @@ function getTasks() {
 }
 
 async function run() {
-  const { extensionEnabled } = await chrome.storage.local.get(["extensionEnabled"]);
   const { vk_currentAutomation } = await chrome.storage.session.get("vk_currentAutomation");
 
-  if (!extensionEnabled || !vk_currentAutomation) {
+  if (!vk_currentAutomation) {
     return;
   }
 
@@ -88,4 +88,10 @@ async function run() {
   }
 };
 
-window.onload = () => setTimeout(run, 3000);
+window.onload = () =>
+  startSiteAutomation({
+    serviceId: "likesfm",
+    run: async () => {
+      setTimeout(run, 3000);
+    },
+  });
