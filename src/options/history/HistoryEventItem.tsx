@@ -12,10 +12,12 @@ export function HistoryEventItem({ event }: HistoryEventItemProps) {
   const status = getEventStatus(event);
 
   return (
-    <div className="p-3 rounded-2xl bg-[#1e2230] border border-white/5">
+    <div className="p-3 rounded-2xl bg-[#1e2230] border border-white/5 min-w-0 overflow-hidden">
       <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-sm text-slate-200 font-semibold">{event.serviceId}.{event.moduleId}</span>
-        <div className="flex items-center gap-1">
+        <span className="text-sm text-slate-200 font-semibold truncate">
+          {event.serviceId}.{event.moduleId}
+        </span>
+        <div className="flex items-center gap-1 shrink-0">
           <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${eventTypeBadgeClass(eventType)}`}>
             {eventType}
           </span>
@@ -24,23 +26,26 @@ export function HistoryEventItem({ event }: HistoryEventItemProps) {
           </span>
         </div>
       </div>
+
       {event.details ? (
         <div className="text-[12px] text-slate-300 mt-1 break-words">
           {event.details}
         </div>
       ) : null}
+
       <div className="text-[11px] text-slate-400">
         {new Date(event.timestamp).toLocaleString()}
       </div>
+
       {event.url ? (
-        <a
-          href={event.url}
-          target="_blank"
-          rel="noreferrer"
-          className="block text-[11px] text-indigo-300/90 hover:text-indigo-200 truncate mt-1"
+        <a 
+          href={event.url} 
+          target="_blank" 
+          rel="noreferrer" 
+          className="block w-full max-w-0 min-w-full truncate text-[11px] text-indigo-300/90 hover:text-indigo-200 mt-1" 
           title={event.url}
-        >
-          {event.url}
+        > 
+          {event.url} 
         </a>
       ) : null}
     </div>
