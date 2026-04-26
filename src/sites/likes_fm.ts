@@ -1,7 +1,8 @@
 import { LIKES_FM_TASKS } from "src/tasks";
 import { startSiteAutomation } from "src/sites/runner";
-import { getRandomDelay, humanClick } from "src/utils";
+import { getRandomDelay, humanClick, waitForElement } from "src/utils";
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+type TaskResult = "success" | "empty" | "retryable_fail";
 
 type LikesFmSettings = Record<LIKES_FM_TASKS, boolean>;
 
@@ -43,6 +44,7 @@ class LikesFm
   private currentTask: LIKES_FM_TASKS = LIKES_FM_TASKS.POLL;
   private hasProcessingTask: boolean = false;
   private userSettings: LikesFmSettings = EMPTY_LIKES_FM_SETTINGS;
+  private lastTaskResult: TaskResult = "success";
 
   private getNextTask(): LIKES_FM_TASKS {
     let currentIndex = this.taskOrder.indexOf(this.currentTask);
@@ -59,13 +61,14 @@ class LikesFm
     throw "Не могу получить ни одного задания, потому что все модули отключены!";
   }
 
-  private async processTask(type: LIKES_FM_TASKS): Promise<void> {
+  private async processTask(type: LIKES_FM_TASKS): Promise<TaskResult> {
     const selector = `.module.page_list_module[type="${type}"]:not(.empty)`;
-    const taskLink = document.querySelector(`${selector} a.open_offer`) as HTMLAnchorElement;
+    const moduleElement = (await waitForElement(selector, { timeout: 3000 })) as HTMLElement | undefined;
+    const taskLink = moduleElement?.querySelector("a.open_offer") as HTMLAnchorElement | null;
 
     if (!taskLink) {
       console.log(`[friendly2] Очередь ${type} пуста.`);
-      return;
+      return "empty";
     }
 
     const taskHref = taskLink.href;
@@ -75,15 +78,17 @@ class LikesFm
 
     if (!this.isTaskStillPresent(selector, taskHref)) {
       console.log(`[friendly2] Задача ${type} успешно выполнена.`);
-      return;
+      return "success";
     }
 
     await this.verifyTask(selector);
 
     if (this.isTaskStillPresent(selector, taskHref)) {
       this.skipTask(selector);
+      return "retryable_fail";
     } else {
       console.log(`[friendly2] Задачу ${type} успешно протолкали.`);
+      return "success";
     }
   }
 
@@ -137,12 +142,16 @@ class LikesFm
     this.hasProcessingTask = true;
     try {
       this.currentTask = this.getNextTask();
-      await this.processTask(this.currentTask);
+      this.lastTaskResult = await this.processTask(this.currentTask);
     } catch (error) {
       console.error("Ошибка при выполнении шага:", error);
+      this.lastTaskResult = "retryable_fail";
     } finally {
       this.hasProcessingTask = false;
-      setTimeout(() => this.run(), getRandomDelay(8000, 14000));
+      const nextDelay = this.lastTaskResult === "retryable_fail"
+        ? getRandomDelay(12000, 18000)
+        : getRandomDelay(8000, 14000);
+      setTimeout(() => this.run(), nextDelay);
     }
   }
 }

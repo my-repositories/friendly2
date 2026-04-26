@@ -1,6 +1,8 @@
 import { LIKES_FM_TASKS } from "src/tasks";
 import { startSiteAutomation } from "src/sites/runner";
-import { humanClick } from "src/utils";
+import { getRandomDelay, humanClick } from "src/utils";
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function getTasks() {
   return {
@@ -74,9 +76,13 @@ async function run() {
   }
 
   const tasks = getTasks();
+  const task = tasks[vk_currentAutomation.type as LIKES_FM_TASKS];
   
   try {
-    await tasks[vk_currentAutomation.type as LIKES_FM_TASKS]();
+    if (!task) {
+      return;
+    }
+    await task();
   } catch (e) {
     console.error(e);
     alert(e);
@@ -84,7 +90,7 @@ async function run() {
     await chrome.storage.session.remove("vk_currentAutomation");
     setTimeout(() => {
       chrome.runtime.sendMessage({ action: "close_current_tab" });
-    }, 3000);
+    }, getRandomDelay(2000, 4000));
   }
 };
 
@@ -92,6 +98,7 @@ window.onload = () =>
   startSiteAutomation({
     serviceId: "likesfm",
     run: async () => {
-      setTimeout(run, 3000);
+      await delay(3000);
+      await run();
     },
   });
