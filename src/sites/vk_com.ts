@@ -1,13 +1,17 @@
 import { appendHistoryEvent, type AutomationEventType, type AutomationStatus } from "src/history";
 import { LIKES_FM_TASKS } from "src/tasks";
 import { startSiteAutomation } from "src/sites/runner";
-import { getRandomDelay, humanClick } from "src/utils";
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import { getRandomDelay, humanClick, waitFor } from "src/utils";
 type TaskRunResult = {
   status?: AutomationStatus;
   eventType?: AutomationEventType;
   details?: string;
+};
+type VkDispatchMessage = {
+  type: "DISPATCH_TASK_TO_VK";
+  taskId: string;
+  taskType: LIKES_FM_TASKS;
+  taskUrl: string;
 };
 
 function getTasks() {
@@ -23,23 +27,20 @@ function getTasks() {
       }
 
       await humanClick(shareBtn);
-      
-      return new Promise((resolve) => {
-        setTimeout(async () => {
-          const shareMy = document.querySelector('#like_share_my') as HTMLElement;
-          if (shareMy) {
-            await humanClick(shareMy);
-            const shareSend = document.querySelector('#like_share_send') as HTMLElement;
-            await humanClick(shareSend);
-          }
-            
-          resolve({
-            status: "success",
-            eventType: "info",
-            details: `vkcom apply share`,
-          });
-        }, 1000);
-      });
+
+      await waitFor(1000);
+      const shareMy = document.querySelector('#like_share_my') as HTMLElement;
+      if (shareMy) {
+        await humanClick(shareMy);
+        const shareSend = document.querySelector('#like_share_send') as HTMLElement;
+        await humanClick(shareSend);
+      }
+
+      return {
+        status: "success",
+        eventType: "info",
+        details: `vkcom apply share`,
+      };
     },
     [LIKES_FM_TASKS.LIKE]: async (): Promise<TaskRunResult> => {
       const likeBtn = document.querySelector('[data-testid=post_footer_action_like]:not([data-user-likes=true]), .like_btns .like_btn.like._like:not(.active)') as HTMLElement;
@@ -60,17 +61,11 @@ function getTasks() {
       }
       
       await humanClick(likeBtn);
-
-      await new Promise((resolve) => {
-        setTimeout(async () => {
-          const heart = document.querySelector('[data-testid=reaction-bar-item-0]') as HTMLElement;
-          if (heart) {
-            await humanClick(heart);
-          }
-            
-          resolve(null);
-        }, 1000);
-      });
+      await waitFor(1000);
+      const heart = document.querySelector('[data-testid=reaction-bar-item-0]') as HTMLElement;
+      if (heart) {
+        await humanClick(heart);
+      }
       return {
         status: "success",
         eventType: "info",
@@ -108,63 +103,114 @@ function getTasks() {
   };
 }
 
-async function run() {
-  const { vk_currentAutomation } = await chrome.storage.session.get("vk_currentAutomation");
+function sendRuntimeMessage<TResponse = unknown>(message: unknown): Promise<TResponse> {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(message, (response: TResponse) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve(response);
+    });
+  });
+}
 
-  if (!vk_currentAutomation) {
-    return;
-  }
-
+async function executeTask(taskMessage: VkDispatchMessage): Promise<void> {
   const tasks = getTasks();
-  const task = tasks[vk_currentAutomation.type as LIKES_FM_TASKS];
+  const task = tasks[taskMessage.taskType as LIKES_FM_TASKS];
+  let resultStatus: AutomationStatus = "success";
+  let resultDetails = "vkcom apply action";
   
   try {
     if (!task) {
-      await appendHistoryEvent({
-        serviceId: "likesfm",
-        moduleId: vk_currentAutomation.type,
-        status: "skipped",
-        eventType: "warn",
-        timestamp: Date.now(),
-        details: "vkcom task handler is missing - skipping",
-        url: vk_currentAutomation.url ?? window.location.href,
-      });
-      return;
+      resultStatus = "skipped";
+      resultDetails = "vkcom task handler is missing - skipping";
+    } else {
+      const result = await task();
+      resultStatus = result?.status ?? "success";
+      resultDetails = result?.details ?? "vkcom apply action";
     }
-    const result = await task();
+
     await appendHistoryEvent({
       serviceId: "likesfm",
-      moduleId: vk_currentAutomation.type,
-      status: result?.status ?? "success",
-      eventType: result?.eventType,
+      moduleId: taskMessage.taskType,
+      status: resultStatus,
+      eventType: resultStatus === "error" ? "error" : "info",
       timestamp: Date.now(),
-      details: result?.details,
-      url: vk_currentAutomation.url ?? window.location.href,
+      details: resultDetails,
+      url: taskMessage.taskUrl ?? window.location.href,
+    });
+
+    await sendRuntimeMessage({
+      type: "VK_ACTION_DONE",
+      taskId: taskMessage.taskId,
+      status: resultStatus,
+      details: resultDetails,
+      data: {
+        url: window.location.href,
+      },
     });
   } catch (e) {
-    alert(e);
     await appendHistoryEvent({
       serviceId: "likesfm",
-      moduleId: vk_currentAutomation.type,
+      moduleId: taskMessage.taskType,
       status: "error",
       eventType: "critical",
       timestamp: Date.now(),
       details: `vkcom task failed critically: ${String(e)}`,
-      url: vk_currentAutomation.url ?? window.location.href,
+      url: taskMessage.taskUrl ?? window.location.href,
     });
+    try {
+      await sendRuntimeMessage({
+        type: "VK_ACTION_DONE",
+        taskId: taskMessage.taskId,
+        status: "error",
+        details: `vkcom task failed critically: ${String(e)}`,
+        reason: "execution_exception",
+        data: {
+          url: window.location.href,
+        },
+      });
+    } catch {
+      // If VK cannot report back, likes.fm has timeout fallback.
+    }
   } finally {
-    await chrome.storage.session.remove("vk_currentAutomation");
-    setTimeout(() => {
-      chrome.runtime.sendMessage({ action: "close_current_tab" });
-    }, getRandomDelay(2000, 4000));
+    await waitFor(getRandomDelay(2000, 4000));
+    chrome.runtime.sendMessage({ action: "close_current_tab" });
   }
-};
+}
+
+function registerTaskListener(): void {
+  chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
+    if ((message as VkDispatchMessage)?.type !== "DISPATCH_TASK_TO_VK") {
+      return false;
+    }
+
+    void executeTask(message as VkDispatchMessage)
+      .then(() => sendResponse({ ok: true }))
+      .catch((error) => sendResponse({ ok: false, error: String(error) }));
+
+    return true;
+  });
+}
+
+async function run() {
+  registerTaskListener();
+  try {
+    await sendRuntimeMessage({
+      type: "VK_TAB_READY",
+      url: window.location.href,
+    });
+  } catch {
+    // likes.fm timeout fallback handles coordinator failures.
+  }
+}
 
 window.onload = () =>
   startSiteAutomation({
     serviceId: "likesfm",
     run: async () => {
-      await delay(3000);
+      await waitFor(3000);
       await run();
     },
   });

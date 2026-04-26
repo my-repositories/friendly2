@@ -8,6 +8,7 @@ import { OptionsHistoryPanel } from "src/options/OptionsHistoryPanel";
 import { OptionsModulesList } from "src/options/OptionsModulesList";
 import { OptionsTabs } from "src/options/OptionsTabs";
 import type { ServiceSettings } from "src/types/services";
+import { waitFor } from "src/utils";
 
 type AllSettings = Record<string, ServiceSettings>;
 const SAVE_DEBOUNCE_MS = 2500;
@@ -17,7 +18,7 @@ const OptionsPage = () => {
   const [historyEvents, setHistoryEvents] = useState<AutomationEvent[]>([]);
   const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
-  const saveTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const saveTokensRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     const keys = SUPPORTED_SERVICES.map(s => s.id);
@@ -26,9 +27,14 @@ const OptionsPage = () => {
       setHistoryEvents(((res[AUTOMATION_HISTORY_KEY] ?? []) as AutomationEvent[]).slice().reverse());
     });
 
+    let isUnmounted = false;
     const frame = requestAnimationFrame(() => {
-      const timer = setTimeout(() => setIsVisible(true), 50);
-      return () => clearTimeout(timer);
+      void (async () => {
+        await waitFor(50);
+        if (!isUnmounted) {
+          setIsVisible(true);
+        }
+      })();
     });
 
     const onStorageChanged: Parameters<typeof chrome.storage.onChanged.addListener>[0] = (changes, areaName) => {
@@ -43,10 +49,8 @@ const OptionsPage = () => {
     return () => {
       cancelAnimationFrame(frame);
       chrome.storage.onChanged.removeListener(onStorageChanged);
-      for (const timer of Object.values(saveTimersRef.current)) {
-        clearTimeout(timer);
-      }
-      saveTimersRef.current = {};
+      isUnmounted = true;
+      saveTokensRef.current = {};
     };
   }, []);
 
@@ -58,15 +62,16 @@ const OptionsPage = () => {
         [moduleId]: !currentServiceSettings[moduleId],
       };
 
-      const existingTimer = saveTimersRef.current[serviceId];
-      if (existingTimer) {
-        clearTimeout(existingTimer);
-      }
-
-      saveTimersRef.current[serviceId] = setTimeout(() => {
+      const nextToken = (saveTokensRef.current[serviceId] ?? 0) + 1;
+      saveTokensRef.current[serviceId] = nextToken;
+      void (async () => {
+        await waitFor(SAVE_DEBOUNCE_MS);
+        if (saveTokensRef.current[serviceId] !== nextToken) {
+          return;
+        }
         chrome.storage.local.set({ [serviceId]: newSettings });
-        delete saveTimersRef.current[serviceId];
-      }, SAVE_DEBOUNCE_MS);
+        delete saveTokensRef.current[serviceId];
+      })();
 
       return { ...prev, [serviceId]: newSettings };
     });

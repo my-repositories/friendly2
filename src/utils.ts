@@ -74,7 +74,7 @@ export async function humanClick(element: HTMLElement): Promise<void> {
   element.focus();
 
   // 3. Небольшая задержка "зажатия" кнопки (от 50 до 150 мс)
-  await new Promise(resolve => setTimeout(resolve, getRandomDelay(50, 150)));
+  await waitFor(getRandomDelay(50, 150));
 
   // 4. Отпускание
   element.dispatchEvent(new PointerEvent('pointerup', { ...commonConfig, isPrimary: true }));

@@ -9,9 +9,18 @@ import {
 } from "src/safety";
 import { LIKES_FM_TASKS } from "src/tasks";
 import { startSiteAutomation } from "src/sites/runner";
-import { getRandomDelay, humanClick, waitForElement } from "src/utils";
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import { getRandomDelay, humanClick, waitFor, waitForElement } from "src/utils";
 type TaskResult = "success" | "empty" | "retryable_fail";
+type VkTaskStatus = "success" | "skipped" | "error";
+type VkTaskFinishedMessage = {
+  type: "TASK_FINISHED";
+  taskId: string;
+  status: VkTaskStatus;
+  details?: string;
+  data?: unknown;
+  reason?: string;
+  finishedAt: number;
+};
 
 type LikesFmSettings = Record<LIKES_FM_TASKS, boolean>;
 
@@ -42,6 +51,7 @@ function toLikesFmSettings(input: unknown): LikesFmSettings {
 class LikesFm
 {
   private static SAFETY_STATE_KEY = "likesfm_safety_state";
+  private static VK_TASK_TIMEOUT_MS = 30_000;
   private safetyPolicy: SafetyPolicy = {
     maxActionsPerHour: 120,
     pauseAfterConsecutiveErrors: 3,
@@ -119,8 +129,13 @@ class LikesFm
     }
 
     const taskHref = taskLink.href;
-    await this.startTask(type, taskLink);
-    await delay(getRandomDelay(6000, 12000));
+    const taskId = await this.startTask(type, taskLink);
+    const vkResult = await this.waitForVkTaskResult(taskId, type, taskHref);
+    if (vkResult.status === "error") {
+      return "retryable_fail";
+    }
+
+    await waitFor(getRandomDelay(1000, 2500));
     this.closePopup();
 
     if (!this.isTaskStillPresent(selector, taskHref)) {
@@ -160,17 +175,98 @@ class LikesFm
     }
   }
 
-  private async startTask(type: LIKES_FM_TASKS, link: HTMLAnchorElement): Promise<void> {
-    await chrome.storage.session.set({
-      vk_currentAutomation: { type, url: link.href }
+  private generateTaskId(type: LIKES_FM_TASKS): string {
+    const randomPart = Math.random().toString(36).slice(2, 10);
+    return `likesfm-${type}-${Date.now()}-${randomPart}`;
+  }
+
+  private sendRuntimeMessage<TResponse = unknown>(message: unknown): Promise<TResponse> {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(message, (response: TResponse) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+        resolve(response);
+      });
     });
+  }
+
+  private waitForTaskFinishedMessage(taskId: string): Promise<VkTaskFinishedMessage> {
+    return this.sendRuntimeMessage<VkTaskFinishedMessage>({
+      type: "WAIT_TASK_RESULT",
+      taskId,
+    });
+  }
+
+  private async waitForVkTaskResult(taskId: string, type: LIKES_FM_TASKS, taskHref: string): Promise<VkTaskFinishedMessage> {
+    const timeoutPromise = (async (): Promise<VkTaskFinishedMessage> => {
+      await waitFor(LikesFm.VK_TASK_TIMEOUT_MS + 1000);
+      return {
+        type: "TASK_FINISHED",
+        taskId,
+        status: "error",
+        details: "VK task timeout after 30 seconds",
+        reason: "timeout",
+        finishedAt: Date.now(),
+      };
+    })();
+
+    let result: VkTaskFinishedMessage;
+    try {
+      result = await Promise.race([this.waitForTaskFinishedMessage(taskId), timeoutPromise]);
+    } catch (error) {
+      result = {
+        type: "TASK_FINISHED",
+        taskId,
+        status: "error",
+        details: `Background messaging failed: ${String(error)}`,
+        reason: "messaging_error",
+        finishedAt: Date.now(),
+      };
+    }
+
+    if (result.status === "error") {
+      await appendHistoryEvent({
+        serviceId: this.id,
+        moduleId: type,
+        status: "error",
+        timestamp: Date.now(),
+        details: result.details ?? "VK task failed",
+        url: taskHref,
+      });
+    }
+
+    return result;
+  }
+
+  private async startTask(type: LIKES_FM_TASKS, link: HTMLAnchorElement): Promise<string> {
+    const taskId = this.generateTaskId(type);
+    const response = await this.sendRuntimeMessage<{ ok: boolean; error?: string }>({
+      type: "START_TASK",
+      taskId,
+      source: "likesfm",
+      taskType: type,
+      taskUrl: link.href,
+      startedAt: Date.now(),
+      timeoutMs: LikesFm.VK_TASK_TIMEOUT_MS,
+    });
+    if (!response?.ok) {
+      throw new Error(response?.error ?? "Failed to register task in background");
+    }
     await humanClick(link);
+    return taskId;
   }
 
   private async verifyTask(selector: string): Promise<void> {
     (document.querySelector(`${selector} span.do_offer`) as HTMLElement)?.click();
-    await delay(getRandomDelay(2000, 4000));
+    await waitFor(getRandomDelay(2000, 4000));
     this.closePopup();
+  }
+
+  private async scheduleNextRun(nextDelay: number): Promise<void> {
+    await waitFor(nextDelay);
+    await this.run();
   }
 
   private skipTask(selector: string): void {
@@ -256,7 +352,7 @@ class LikesFm
       const nextDelay = this.lastTaskResult === "retryable_fail"
         ? getRandomDelay(15000, 22000)
         : getRandomDelay(8000, 14000);
-      setTimeout(() => this.run(), nextDelay);
+      void this.scheduleNextRun(nextDelay);
     }
   }
 }

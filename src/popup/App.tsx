@@ -3,6 +3,7 @@ import { AppFooter } from "src/popup/AppFooter";
 import { AppHeader } from "src/popup/AppHeader";
 import { AppSiteItem } from "src/popup/AppSiteItem";
 import { SUPPORTED_SERVICES } from "src/config";
+import { waitFor } from "src/utils";
 
 export function App() {
   const [isActive, setIsActive] = useState(false);
@@ -28,12 +29,18 @@ export function App() {
     };
     chrome.storage.onChanged.addListener(onStorageChanged);
 
+    let isUnmounted = false;
     const frame = requestAnimationFrame(() => {
-      const timer = setTimeout(() => setIsVisible(true), 40);
-      return () => clearTimeout(timer);
+      void (async () => {
+        await waitFor(40);
+        if (!isUnmounted) {
+          setIsVisible(true);
+        }
+      })();
     });
     return () => {
       chrome.storage.onChanged.removeListener(onStorageChanged);
+      isUnmounted = true;
       cancelAnimationFrame(frame);
     };
   }, []);
