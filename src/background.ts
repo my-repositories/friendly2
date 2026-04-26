@@ -1,3 +1,14 @@
+import type {
+  CloseCurrentTabMessage,
+  DispatchTaskToVkMessage,
+  RuntimeInboundMessage,
+  StartTaskMessage,
+  TaskFinishedMessage,
+  VkActionDoneMessage,
+  VkTabReadyMessage,
+  WaitTaskResultMessage,
+} from "src/automation/contracts/messages";
+import type { VkTaskStatus, VkTaskType } from "src/automation/contracts/tasks";
 import { createDefaultSettings } from "src/settings";
 import { appendHistoryEvent } from "src/history";
 
@@ -12,7 +23,7 @@ type TaskStatus = "pending" | "success" | "skipped" | "error";
 
 type BridgeTask = {
   taskId: string;
-  taskType: string;
+  taskType: VkTaskType;
   taskUrl: string;
   likesTabId: number;
   vkTabId?: number;
@@ -25,15 +36,7 @@ type BridgeTask = {
   finishReason?: string;
 };
 
-type BridgeResponse = {
-  type: "TASK_FINISHED";
-  taskId: string;
-  status: Exclude<TaskStatus, "pending">;
-  details?: string;
-  data?: unknown;
-  finishedAt: number;
-  reason?: string;
-};
+type BridgeResponse = TaskFinishedMessage;
 
 const tasksById = new Map<string, BridgeTask>();
 const waitersByTaskId = new Map<string, Array<(response?: unknown) => void>>();
@@ -42,7 +45,7 @@ function makeTaskResponse(task: BridgeTask): BridgeResponse {
   return {
     type: "TASK_FINISHED",
     taskId: task.taskId,
-    status: task.status === "pending" ? "error" : task.status,
+    status: (task.status === "pending" ? "error" : task.status) as VkTaskStatus,
     details: task.details,
     data: task.data,
     finishedAt: task.finishedAt ?? Date.now(),
@@ -103,14 +106,15 @@ function expirePendingTasks(now = Date.now()): void {
 
 function tryDispatchTaskToVk(task: BridgeTask, vkTabId: number): void {
   task.vkTabId = vkTabId;
+  const message: DispatchTaskToVkMessage = {
+    type: "DISPATCH_TASK_TO_VK",
+    taskId: task.taskId,
+    taskType: task.taskType,
+    taskUrl: task.taskUrl,
+  };
   chrome.tabs.sendMessage(
     vkTabId,
-    {
-      type: "DISPATCH_TASK_TO_VK",
-      taskId: task.taskId,
-      taskType: task.taskType,
-      taskUrl: task.taskUrl,
-    },
+    message,
     () => {
       if (chrome.runtime.lastError) {
         finalizeTask(task.taskId, "error", {
@@ -198,18 +202,23 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  const inbound = message as RuntimeInboundMessage;
+  const messageType = typeof (message as { type?: unknown })?.type === "string"
+    ? (message as { type: string }).type
+    : undefined;
   expirePendingTasks();
   cleanupOldCompletedTasks();
 
-  if (message?.type === "START_TASK") {
+  if (messageType === "START_TASK") {
+    const startMessage = inbound as StartTaskMessage;
     if (!sender.tab?.id) {
       sendResponse({ ok: false, error: "likes.fm tab id is missing" });
       return false;
     }
-    const timeoutMs = Number(message.timeoutMs ?? VK_TASK_TIMEOUT_DEFAULT_MS);
-    const taskId = String(message.taskId ?? "");
-    const taskType = String(message.taskType ?? "");
-    const taskUrl = String(message.taskUrl ?? "");
+    const timeoutMs = Number(startMessage.timeoutMs ?? VK_TASK_TIMEOUT_DEFAULT_MS);
+    const taskId = String(startMessage.taskId ?? "");
+    const taskType = startMessage.taskType;
+    const taskUrl = String(startMessage.taskUrl ?? "");
 
     if (!taskId || !taskType || !taskUrl) {
       sendResponse({ ok: false, error: "invalid START_TASK payload" });
@@ -229,8 +238,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
-  if (message?.type === "WAIT_TASK_RESULT") {
-    const taskId = String(message.taskId ?? "");
+  if (messageType === "WAIT_TASK_RESULT") {
+    const waitMessage = inbound as WaitTaskResultMessage;
+    const taskId = String(waitMessage.taskId ?? "");
     const task = tasksById.get(taskId);
     if (!task) {
       sendResponse({
@@ -253,12 +263,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (message?.type === "VK_TAB_READY") {
+  if (messageType === "VK_TAB_READY") {
+    const readyMessage = inbound as VkTabReadyMessage;
     if (!sender.tab?.id) {
       sendResponse({ ok: false, error: "vk tab id is missing" });
       return false;
     }
-    const vkUrl = String(message.url ?? "");
+    const vkUrl = String(readyMessage.url ?? "");
     const task = findPendingTaskForVkUrl(vkUrl);
     if (!task) {
       sendResponse({ ok: true, dispatched: false });
@@ -269,23 +280,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
-  if (message?.type === "VK_ACTION_DONE") {
-    const taskId = String(message.taskId ?? "");
-    const status = String(message.status ?? "error");
+  if (messageType === "VK_ACTION_DONE") {
+    const actionDoneMessage = inbound as VkActionDoneMessage;
+    const taskId = String(actionDoneMessage.taskId ?? "");
+    const status = String(actionDoneMessage.status ?? "error");
     if (status !== "success" && status !== "skipped" && status !== "error") {
       sendResponse({ ok: false, error: "invalid status" });
       return false;
     }
     const task = finalizeTask(taskId, status, {
-      details: typeof message.details === "string" ? message.details : undefined,
-      data: message.data,
-      reason: typeof message.reason === "string" ? message.reason : undefined,
+      details: typeof actionDoneMessage.details === "string" ? actionDoneMessage.details : undefined,
+      data: actionDoneMessage.data,
+      reason: typeof actionDoneMessage.reason === "string" ? actionDoneMessage.reason : undefined,
     });
     sendResponse({ ok: Boolean(task), taskId });
     return false;
   }
 
-  if (message.action === "close_current_tab" && sender.tab?.id) {
+  if ((inbound as CloseCurrentTabMessage).action === "close_current_tab" && sender.tab?.id) {
     chrome.tabs.remove(sender.tab.id);
   }
 

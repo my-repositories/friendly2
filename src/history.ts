@@ -1,3 +1,5 @@
+import { normalizeEventType as normalizeHistoryEventType } from "src/history/eventFactories";
+
 export type AutomationStatus = "success" | "skipped" | "error";
 export type AutomationEventType = "info" | "warn" | "error" | "critical";
 
@@ -22,16 +24,10 @@ function normalizeStatus(status: unknown): AutomationStatus {
 }
 
 function normalizeEventType(eventType: unknown, status: AutomationStatus): AutomationEventType {
-  if (eventType === "info" || eventType === "warn" || eventType === "error" || eventType === "critical") {
-    return eventType;
-  }
-  if (status === "error") {
-    return "error";
-  }
-  if (status === "skipped") {
-    return "warn";
-  }
-  return "info";
+  return normalizeHistoryEventType(
+    typeof eventType === "string" ? (eventType as AutomationEventType) : undefined,
+    status
+  );
 }
 
 export async function appendHistoryEvent(event: AutomationEvent): Promise<void> {
