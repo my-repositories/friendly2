@@ -1,4 +1,12 @@
 import { appendHistoryEvent } from "src/history";
+import {
+  applyHourlyReset,
+  createInitialSafetyState,
+  isSafetyPaused,
+  normalizeSafetyState,
+  type SafetyPolicy,
+  type SafetyState,
+} from "src/safety";
 import { LIKES_FM_TASKS } from "src/tasks";
 import { startSiteAutomation } from "src/sites/runner";
 import { getRandomDelay, humanClick, waitForElement } from "src/utils";
@@ -33,6 +41,12 @@ function toLikesFmSettings(input: unknown): LikesFmSettings {
 
 class LikesFm
 {
+  private static SAFETY_STATE_KEY = "likesfm_safety_state";
+  private safetyPolicy: SafetyPolicy = {
+    maxActionsPerHour: 120,
+    pauseAfterConsecutiveErrors: 3,
+    pauseDurationMs: 5 * 60 * 1000,
+  };
   private id = "likesfm";
   private taskOrder = [
       LIKES_FM_TASKS.REPOST,
@@ -46,6 +60,31 @@ class LikesFm
   private hasProcessingTask: boolean = false;
   private userSettings: LikesFmSettings = EMPTY_LIKES_FM_SETTINGS;
   private lastTaskResult: TaskResult = "success";
+  private safetyState: SafetyState = createInitialSafetyState();
+
+  private async persistSafetyState(): Promise<void> {
+    await chrome.storage.session.set({
+      [LikesFm.SAFETY_STATE_KEY]: this.safetyState,
+    });
+  }
+
+  private async loadSafetyState(): Promise<void> {
+    const now = Date.now();
+    const state = await chrome.storage.session.get([LikesFm.SAFETY_STATE_KEY]);
+    this.safetyState = applyHourlyReset(normalizeSafetyState(state[LikesFm.SAFETY_STATE_KEY], now), now);
+    await this.persistSafetyState();
+  }
+
+  private async syncSafetyStatusForPopup(): Promise<void> {
+    const now = Date.now();
+    await chrome.storage.session.set({
+      likesfm_safety_status: {
+        paused: isSafetyPaused(this.safetyState, this.safetyPolicy, now),
+        pausedUntil: this.safetyState.pausedUntil,
+        actionsThisHour: this.safetyState.actionsThisHour,
+      },
+    });
+  }
 
   private getNextTask(): LIKES_FM_TASKS {
     let currentIndex = this.taskOrder.indexOf(this.currentTask);
@@ -152,6 +191,8 @@ class LikesFm
   public async init(): Promise<LikesFm> {
     const settings = await chrome.storage.local.get([this.id]);
     this.userSettings = toLikesFmSettings(settings[this.id]);
+    await this.loadSafetyState();
+    await this.syncSafetyStatusForPopup();
 
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === 'local' && changes[this.id]) {
@@ -169,8 +210,33 @@ class LikesFm
 
     this.hasProcessingTask = true;
     try {
+      const now = Date.now();
+      this.safetyState = applyHourlyReset(this.safetyState, now);
+
+      if (isSafetyPaused(this.safetyState, this.safetyPolicy, now)) {
+        await appendHistoryEvent({
+          serviceId: this.id,
+          moduleId: "safety",
+          status: "skipped",
+          timestamp: now,
+          details: "Safety pause active",
+        });
+        this.lastTaskResult = "empty";
+        return;
+      }
+
       this.currentTask = this.getNextTask();
       this.lastTaskResult = await this.processTask(this.currentTask);
+      this.safetyState.actionsThisHour += 1;
+      if (this.lastTaskResult === "retryable_fail") {
+        this.safetyState.consecutiveErrors += 1;
+      } else if (this.lastTaskResult === "success") {
+        this.safetyState.consecutiveErrors = 0;
+      }
+
+      if (this.safetyState.consecutiveErrors >= this.safetyPolicy.pauseAfterConsecutiveErrors) {
+        this.safetyState.pausedUntil = Date.now() + this.safetyPolicy.pauseDurationMs;
+      }
     } catch (error) {
       console.error("Ошибка при выполнении шага:", error);
       await appendHistoryEvent({
@@ -180,11 +246,17 @@ class LikesFm
         timestamp: Date.now(),
         details: String(error),
       });
+      this.safetyState.consecutiveErrors += 1;
+      if (this.safetyState.consecutiveErrors >= this.safetyPolicy.pauseAfterConsecutiveErrors) {
+        this.safetyState.pausedUntil = Date.now() + this.safetyPolicy.pauseDurationMs;
+      }
       this.lastTaskResult = "retryable_fail";
     } finally {
       this.hasProcessingTask = false;
+      await this.persistSafetyState();
+      await this.syncSafetyStatusForPopup();
       const nextDelay = this.lastTaskResult === "retryable_fail"
-        ? getRandomDelay(12000, 18000)
+        ? getRandomDelay(15000, 22000)
         : getRandomDelay(8000, 14000);
       setTimeout(() => this.run(), nextDelay);
     }

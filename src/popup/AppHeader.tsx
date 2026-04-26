@@ -3,14 +3,16 @@ import { Zap, Power, Settings } from "lucide-react";
 
 interface StatusHeaderProps {
   isActive: boolean;
+  isSafetyPaused: boolean;
   onToggle: () => void;
   onOpenOptions: () => void;
 }
 
-export function AppHeader({ isActive, onToggle, onOpenOptions }: StatusHeaderProps) {
+export function AppHeader({ isActive, isSafetyPaused, onToggle, onOpenOptions }: StatusHeaderProps) {
+  const isRunning = isActive && !isSafetyPaused;
   return (
     <div className={`p-5 pb-6 relative transition-colors duration-500 ${
-      isActive ? 'bg-gradient-to-br from-[#8b5cf6] to-[#6d28d9]' : 'bg-slate-800'
+      isRunning ? 'bg-gradient-to-br from-[#8b5cf6] to-[#6d28d9]' : 'bg-slate-800'
     }`}>
       <div className="flex justify-between items-start relative z-10">
         <div>
@@ -21,12 +23,12 @@ export function AppHeader({ isActive, onToggle, onOpenOptions }: StatusHeaderPro
           
           <div className="flex items-center gap-1.5 ml-0.5">
             <div className={`w-1.5 h-1.5 rounded-full ${
-              isActive ? 'bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-rose-400'
+              isRunning ? 'bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]' : isSafetyPaused ? 'bg-amber-400' : 'bg-rose-400'
             }`}></div>
             <span className={`text-[9px] font-black uppercase tracking-[1px] ${
-              isActive ? 'text-emerald-300/90' : 'text-rose-300/90'
+              isRunning ? 'text-emerald-300/90' : isSafetyPaused ? 'text-amber-300/90' : 'text-rose-300/90'
             }`}>
-              {isActive ? 'Система активна' : 'Система отключена'}
+              {isSafetyPaused ? 'Пауза безопасности' : isActive ? 'Система активна' : 'Система отключена'}
             </span>
           </div>
         </div>

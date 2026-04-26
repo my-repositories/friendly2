@@ -6,6 +6,7 @@ import { SUPPORTED_SERVICES } from "src/config";
 
 export function App() {
   const [isActive, setIsActive] = useState(false);
+  const [isSafetyPaused, setIsSafetyPaused] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const allPatterns = useMemo(() => SUPPORTED_SERVICES.map((service) => service.pattern), []);
 
@@ -15,12 +16,26 @@ export function App() {
         setIsActive(res.extensionEnabled);
       }
     });
+    chrome.storage.session.get(["likesfm_safety_status"], (res) => {
+      setIsSafetyPaused(Boolean(res.likesfm_safety_status?.paused));
+    });
+
+    const onStorageChanged: Parameters<typeof chrome.storage.onChanged.addListener>[0] = (changes, areaName) => {
+      if (areaName !== "session" || !changes.likesfm_safety_status) {
+        return;
+      }
+      setIsSafetyPaused(Boolean(changes.likesfm_safety_status.newValue?.paused));
+    };
+    chrome.storage.onChanged.addListener(onStorageChanged);
 
     const frame = requestAnimationFrame(() => {
       const timer = setTimeout(() => setIsVisible(true), 40);
       return () => clearTimeout(timer);
     });
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      chrome.storage.onChanged.removeListener(onStorageChanged);
+      cancelAnimationFrame(frame);
+    };
   }, []);
 
   const toggleExtension = useCallback(async () => {
@@ -56,6 +71,7 @@ export function App() {
     <div className="w-72 bg-[#0f111a] text-slate-200 overflow-hidden font-sans border border-white/5 shadow-2xl transition-opacity duration-500">
       <AppHeader 
         isActive={isActive} 
+        isSafetyPaused={isSafetyPaused}
         onToggle={toggleExtension} 
         onOpenOptions={openOptions} 
       />
