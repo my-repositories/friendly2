@@ -70,7 +70,6 @@ async function run() {
   const { vk_currentAutomation } = await chrome.storage.session.get("vk_currentAutomation");
 
   if (!extensionEnabled || !vk_currentAutomation) {
-    alert("!extensionEnabled || !vk_currentAutomation" + (vk_currentAutomation && vk_currentAutomation.type || '??'))
     return;
   }
 
